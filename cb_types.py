@@ -191,6 +191,7 @@ class GeoNodeContainer(GeoNodeMeshObject):
             row = box.row()
             row.label(text="Add")
             row.operator('cabinet_builder.add_cabinet_part',text="Cabinet Part").parent_name = self.obj.name
+            row.operator('cabinet_builder.add_opening',text="Opening").parent_name = self.obj.name
             row = box.row()
             row.prop(scene_cb,'children_tabs',expand=True)
             if scene_cb.children_tabs == 'SHOW_SELECTED':

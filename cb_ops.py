@@ -125,6 +125,57 @@ class cabinet_builder_OT_add_cabinet_part(bpy.types.Operator):
         layout.prop(self,'part_thickness')
 
 
+class cabinet_builder_OT_add_opening(bpy.types.Operator):
+    bl_idname = "cabinet_builder.add_opening"
+    bl_label = "Add Opening"
+    bl_description = "This will add an opening"
+
+    parent_name: bpy.props.StringProperty(name="Parent Name")# type: ignore
+
+    opening_name: bpy.props.StringProperty(name="Opening Name")# type: ignore
+
+    opening_width: bpy.props.FloatProperty(name="Opening Width",
+                                             description="Default opening width",
+                                             default=cb_unit.inch(18.0),
+                                             unit='LENGTH')# type: ignore
+    
+    opening_height: bpy.props.FloatProperty(name="Opening Height",
+                                             description="Default opening height",
+                                             default=cb_unit.inch(34.0),
+                                             unit='LENGTH')# type: ignore    
+
+    opening_depth: bpy.props.FloatProperty(name="Opening Depth",
+                                             description="Default opening depth",
+                                             default=cb_unit.inch(24.0),
+                                             unit='LENGTH')# type: ignore    
+    
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=300)
+
+    def execute(self, context):  
+        if self.parent_name == "":
+            parent = None
+        else:
+            parent = bpy.data.objects[self.parent_name]
+        part = cb_types.GeoNodeContainer()
+        part.create(self.opening_name)
+        part.obj.parent = parent
+        part.set_input('Dim X',self.opening_width)
+        part.set_input('Dim Y',self.opening_depth)
+        part.set_input('Dim Z',self.opening_height)
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.prop(self,'opening_name')
+        layout.prop(self,'opening_width')
+        layout.prop(self,'opening_height')
+        layout.prop(self,'opening_depth')
+
+
 class cabinet_builder_OT_add_property(bpy.types.Operator):
     bl_idname = "cabinet_builder.add_property"
     bl_label = "Add Property"
@@ -680,6 +731,7 @@ class cabinet_builder_OT_save_cabinet(Save_Operator):
 classes = (
     cabinet_builder_OT_add_cabinet_container,
     cabinet_builder_OT_add_cabinet_part,
+    cabinet_builder_OT_add_opening,
     cabinet_builder_OT_add_property,
     Variables,
     cabinet_builder_OT_get_vars_from_object,
