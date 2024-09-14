@@ -62,6 +62,19 @@ class GeoNodeMeshObject():
             node_input = self.mod.node_group.interface.items_tree[name]
             return eval('self.mod["' + node_input.identifier + '"]')
 
+    def get_var_input(self,input_name,name):
+        node = self.mod.node_group      
+        input_identifier = "" 
+        for input in node.interface.items_tree:
+            if input.name == input_name:
+                input_identifier = input.identifier
+                break        
+        data_path = 'modifiers["' + self.mod.name + '"]["' + input_identifier + '"]'
+        return self.obj.cabinet_builder.get_var(data_path,name)
+    
+    def get_var_prop(self,name,var_name):
+        return self.obj.cabinet_builder.get_var('["' + name + '"]',var_name)
+
     def draw_input(self,layout,name,text,icon=''):
         '''
             This draws a geometry node group input on a blender ui layout
@@ -72,6 +85,15 @@ class GeoNodeMeshObject():
                 layout.prop(self.mod,'["' + node_input.identifier + '"]',text=text)
             else:
                 layout.prop(self.mod,'["' + node_input.identifier + '"]',text=text,icon=icon)
+
+    def driver_input(self,name,expression="",variables=[]):
+        input_identifier = ""
+        if name in self.mod.node_group.interface.items_tree:
+            node_input = self.mod.node_group.interface.items_tree[name]  
+            input_identifier = node_input.identifier
+        driver = self.obj.driver_add('modifiers["' + self.mod.name + '"]["' + input_identifier + '"]')
+        self.obj.cabinet_builder.add_driver_variables(driver,variables)
+        driver.driver.expression = expression
 
     def draw_transform_ui(self,layout):
         col1 = layout.row()

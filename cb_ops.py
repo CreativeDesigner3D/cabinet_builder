@@ -436,6 +436,7 @@ class cabinet_builder_OT_drag_library_item(cb_snap.Drop_Operator):
     bl_options = {'UNDO'}
 
     parent = None
+    container = None
 
     @classmethod
     def poll(cls, context):
@@ -454,6 +455,7 @@ class cabinet_builder_OT_drag_library_item(cb_snap.Drop_Operator):
                 self.parent = obj
             context.view_layer.active_layer_collection.collection.objects.link(obj) 
 
+        self.container = cb_types.GeoNodeContainer(self.parent)
         # context.view_layer.active_layer_collection.collection.objects.link(self.parent) 
         self.parent.hide_viewport = False
         context.window_manager.modal_handler_add(self)
@@ -473,14 +475,30 @@ class cabinet_builder_OT_drag_library_item(cb_snap.Drop_Operator):
         cb_snap.main(self, event.ctrl, context)
         self.hide_objects(False)
 
-        self.parent.location = self.hit_location
+        sel_container = None
+        if self.hit_object and 'IS_GeoNodeContainer' in self.hit_object:
+            sel_container = cb_types.GeoNodeContainer(self.hit_object)
+            self.container.obj.location = (0,0,0)
+            self.container.obj.parent = self.hit_object
+            self.container.set_input("Dim X",sel_container.get_input('Dim X'))
+            self.container.set_input("Dim Y",sel_container.get_input('Dim Y'))
+            self.container.set_input("Dim Z",sel_container.get_input('Dim Z'))
+        else:
+            self.container.obj.parent = None
+            self.parent.location = self.hit_location
 
         if self.event_is_place_asset(event):
+            if sel_container:
+                dim_x = sel_container.get_var_input("Dim X",'dim_x')
+                dim_y = sel_container.get_var_input("Dim Y",'dim_y')
+                dim_z = sel_container.get_var_input("Dim Z",'dim_z')
+                self.container.driver_input('Dim X','dim_x',[dim_x])
+                self.container.driver_input('Dim Y','dim_y',[dim_y])
+                self.container.driver_input('Dim Z','dim_z',[dim_z])
             return {'FINISHED'}
 
         if event.type in {'RIGHTMOUSE', 'ESC'}:
             #---DELETE DATA
-            self.delete_dims()
             for child in self.cabinet.obj.children_recursive:
                 bpy.data.objects.remove(child, do_unlink=True)
             bpy.data.objects.remove(self.cabinet.obj, do_unlink=True) 

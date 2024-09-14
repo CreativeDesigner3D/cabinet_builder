@@ -62,6 +62,17 @@ class Object_Cabinet_Builder(PropertyGroup):
 
     expand_object_info: BoolProperty(name="Expand Object Info",default=False)# type: ignore
 
+    def get_var(self,data_path,name):
+        return Variable(self.id_data,data_path,name)
+    
+    def add_driver_variables(self,driver,variables):
+        for var in variables:
+            new_var = driver.driver.variables.new()
+            new_var.type = 'SINGLE_PROP'
+            new_var.name = var.name
+            new_var.targets[0].data_path = var.data_path
+            new_var.targets[0].id = var.obj
+
     def get_drivers(self):
         obj = self.id_data
         drivers = []
