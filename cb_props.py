@@ -43,6 +43,8 @@ class Scene_Cabinet_Builder(PropertyGroup):
 
     variable_object: PointerProperty(name="Variable Object",type=bpy.types.Object)# type: ignore
 
+    active_library_category: StringProperty(name="Active Library Category")# type: ignore
+
     @classmethod
     def register(cls):
         bpy.types.Scene.cabinet_builder = PointerProperty(
@@ -160,9 +162,29 @@ class Object_Cabinet_Builder(PropertyGroup):
     def unregister(cls):
         del bpy.types.Object.home_builder   
 
+class Window_Manager_Cabinet_Builder(PropertyGroup):
+
+    cabinet_builder_library_index: IntProperty(name="Cabinet Builder Index",description="",default=0)# type: ignore
+    cabinet_builder_library_assets: bpy.props.CollectionProperty(
+        type=bpy.types.AssetHandle,
+        description="Current Set of Assets In Asset Browser")# type: ignore  
+    
+    @classmethod
+    def register(cls):
+        bpy.types.WindowManager.cabinet_builder = PointerProperty(
+            name="Cabinet Builder Props",
+            description="Cabinet Builder Props",
+            type=cls,
+        )
+        
+    @classmethod
+    def unregister(cls):
+        del bpy.types.WindowManager.cabinet_builder  
+
 classes = (
     Scene_Cabinet_Builder,
     Object_Cabinet_Builder,
+    Window_Manager_Cabinet_Builder,
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)      

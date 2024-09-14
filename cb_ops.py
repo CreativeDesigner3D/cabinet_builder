@@ -1,5 +1,9 @@
 import bpy
-from . import cb_types, cb_unit
+import os
+import subprocess
+import codecs
+from mathutils import Vector
+from . import cb_types, cb_unit, cb_paths, cb_snap
 from rna_prop_ui import rna_idprop_quote_path
 
 class cabinet_builder_OT_temp_operator(bpy.types.Operator):
@@ -373,6 +377,306 @@ class cabinet_builder_OT_select_object(bpy.types.Operator):
             context.view_layer.objects.active = obj
         return {'FINISHED'}
 
+
+class cabinet_builder_OT_drag_library_item(cb_snap.Drop_Operator):
+    bl_idname = "cabinet_builder.drag_library_item"
+    bl_label = "Drag Library Item"
+    bl_description = "This is called when an item from the library is dragged"
+    bl_options = {'UNDO'}
+
+    parent = None
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode != 'OBJECT':
+            return False
+        return True
+
+    def execute(self, context):
+        self.setup_drop_operator(context)
+        self.parent = None
+        path = os.path.join(os.path.dirname(context.asset.full_library_path),'assets',context.asset.name + ".blend")
+        with bpy.data.libraries.load(path) as (data_from, data_to):
+                data_to.objects = data_from.objects
+        for obj in data_to.objects:
+            if obj.parent == None:
+                self.parent = obj
+            context.view_layer.active_layer_collection.collection.objects.link(obj) 
+
+        # context.view_layer.active_layer_collection.collection.objects.link(self.parent) 
+        self.parent.hide_viewport = False
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+    
+    def hide_objects(self,hide):   
+        self.parent.hide_set(hide)
+        for child in self.parent.children_recursive:
+            if child.name in bpy.context.view_layer.active_layer_collection.collection.objects:
+                child.hide_set(hide)
+
+    def modal(self, context, event):
+
+        self.hide_objects(True)
+        self.mouse_pos = Vector((event.mouse_x - self.region.x, event.mouse_y - self.region.y))  
+        context.view_layer.update()          
+        cb_snap.main(self, event.ctrl, context)
+        self.hide_objects(False)
+
+        self.parent.location = self.hit_location
+
+        if self.event_is_place_asset(event):
+            return {'FINISHED'}
+
+        if event.type in {'RIGHTMOUSE', 'ESC'}:
+            #---DELETE DATA
+            self.delete_dims()
+            for child in self.cabinet.obj.children_recursive:
+                bpy.data.objects.remove(child, do_unlink=True)
+            bpy.data.objects.remove(self.cabinet.obj, do_unlink=True) 
+            return {'CANCELLED'}      
+          
+        if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+            return {'PASS_THROUGH'}
+
+        return {'RUNNING_MODAL'}  
+
+
+class cabinet_builder_OT_click_library_item(bpy.types.Operator):
+    bl_idname = "cabinet_builder.click_library_item"
+    bl_label = "Click Library Item"
+    bl_description = "This is called when an item from the library is clicked"
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode != 'OBJECT':
+            return False
+        return True
+
+    def execute(self, context):
+        print(context.asset)
+        return {'FINISHED'}
+    
+
+class cabinet_builder_OT_add_user_library_category(bpy.types.Operator):
+    bl_idname = "cabinet_builder.add_user_library_category"
+    bl_label = "Add User Library Category"
+
+    category_name: bpy.props.StringProperty(name="Category Name")# type: ignore
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=400)
+    
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self,'category_name')
+
+    def execute(self, context):
+        path = cb_paths.get_user_library_path()
+        custom_library_path = os.path.join(path,self.category_name)
+        if not os.path.exists(custom_library_path):
+            os.makedirs(custom_library_path)
+        context.scene.cabinet_builder.active_library_category = self.category_name
+        return {'FINISHED'}
+
+class cabinet_builder_OT_change_library_category(bpy.types.Operator):
+    bl_idname = "cabinet_builder.change_library_category"
+    bl_label = "Change Library Category"
+
+    category_path: bpy.props.StringProperty(name="Category Name")# type: ignore
+
+    def execute(self, context):
+        category_name = os.path.basename(self.category_path)
+        context.scene.cabinet_builder.active_library_category = category_name
+        user_closet_library = cb_paths.get_cabinet_builder_asset_library(context)
+        user_closet_library.path = self.category_path
+        if bpy.ops.asset.library_refresh.poll():
+            bpy.ops.asset.library_refresh()
+        return {'FINISHED'}
+    
+class Save_Operator(bpy.types.Operator):
+    
+    def get_current_view_rotation(self,context):
+        '''
+        Gets the current view rotation for creating thumbnails
+        '''
+        for window in context.window_manager.windows:
+            screen = window.screen
+
+            for area in screen.areas:
+                if area.type == 'VIEW_3D':
+                    for space in area.spaces:
+                        if space.type == 'VIEW_3D':
+                            return space.region_3d.view_rotation
+
+        return (0,0,0)
+
+    def create_empty_library_script(self,library_path):
+        file = codecs.open(os.path.join(bpy.app.tempdir,"save_library_temp.py"),'w',encoding='utf-8')
+        file.write("import bpy\n")
+
+        file.write("for mat in bpy.data.materials:\n")
+        file.write("    bpy.data.materials.remove(mat,do_unlink=True)\n")
+        file.write("for obj in bpy.data.objects:\n")
+        file.write("    bpy.data.objects.remove(obj,do_unlink=True)\n")               
+        file.write("bpy.context.preferences.filepaths.save_version = 0\n")
+
+        file.write("bpy.ops.wm.save_as_mainfile(filepath=r'" + library_path + "')\n")
+        file.close()
+        return os.path.join(bpy.app.tempdir,'save_library_temp.py')
+
+    def create_assembly_thumbnail_script(self,source_dir,source_file,assembly_name,obj_list,view_rotation):
+        file = codecs.open(os.path.join(bpy.app.tempdir,"thumb_temp.py"),'w',encoding='utf-8')
+        file.write("import bpy\n")
+        file.write("with bpy.data.libraries.load(r'" + source_file + "') as (data_from, data_to):\n")
+        file.write("    data_to.objects = " + str(obj_list) + "\n")    
+
+        file.write("for obj in data_to.objects:\n")
+        file.write("    bpy.context.view_layer.active_layer_collection.collection.objects.link(obj)\n")
+        file.write("    obj.select_set(True)\n")
+        
+        file.write("bpy.context.scene.camera.rotation_euler = " + str(view_rotation) + "\n")  
+        file.write("bpy.ops.view3d.camera_to_view_selected()\n")
+
+        file.write("render = bpy.context.scene.render\n")
+        file.write("render.use_file_extension = True\n")
+        file.write("render.filepath = r'" + os.path.join(source_dir,assembly_name) + "'\n")
+        file.write("bpy.ops.render.render(write_still=True)\n")
+        file.close()
+
+        return os.path.join(bpy.app.tempdir,'thumb_temp.py')
+    
+    def create_assembly_save_script(self,source_dir,source_file,assembly_name,obj_list):
+        file = codecs.open(os.path.join(bpy.app.tempdir,"save_temp.py"),'w',encoding='utf-8')
+        file.write("import bpy\n")
+        file.write("import os\n")
+
+        file.write("for mat in bpy.data.materials:\n")
+        file.write("    bpy.data.materials.remove(mat,do_unlink=True)\n")
+        file.write("for obj in bpy.data.objects:\n")
+        file.write("    bpy.data.objects.remove(obj,do_unlink=True)\n")               
+        file.write("bpy.context.preferences.filepaths.save_version = 0\n")
+        
+        file.write("with bpy.data.libraries.load(r'" + source_file + "') as (data_from, data_to):\n")
+        file.write("    data_to.objects = " + str(obj_list) + "\n")        
+
+        file.write("parent_obj = None\n")
+        file.write("for obj in data_to.objects:\n")
+        file.write("    bpy.context.view_layer.active_layer_collection.collection.objects.link(obj)\n")
+        file.write("    if obj.parent == None:\n")
+        file.write("        parent_obj = obj\n")
+
+        file.write("if parent_obj:\n")
+        file.write("    parent_obj.location = (0,0,0)\n")
+        file.write("    parent_obj.rotation_euler = (0,0,0)\n")
+
+        file.write("for mat in bpy.data.materials:\n")
+        file.write("    mat.asset_clear()\n")
+
+        file.write("bpy.ops.wm.save_as_mainfile(filepath=r'" + os.path.join(source_dir,assembly_name) + ".blend')\n")
+        file.close()
+        return os.path.join(bpy.app.tempdir,'save_temp.py')
+
+    def create_asset_script(self,asset_name,thumbnail_path,is_insert=False):
+        file = codecs.open(os.path.join(bpy.app.tempdir,"asset_temp.py"),'w',encoding='utf-8')
+        file.write("import bpy\n")
+        file.write("bpy.context.preferences.filepaths.save_version = 0\n")
+        file.write("bpy.ops.mesh.primitive_cube_add()\n")
+        file.write("obj = bpy.context.view_layer.objects.active\n")
+        file.write("obj.name = '" + asset_name + "'\n")
+        file.write("obj.asset_mark()\n")
+        if is_insert:
+            file.write("obj.asset_data.tags.new('IS_INSERT')\n")
+        file.write("override = bpy.context.copy()\n")
+        file.write("override['id'] = obj\n")
+        file.write("test_path = r'" + thumbnail_path + "'\n")
+        file.write("with bpy.context.temp_override(**override):\n")
+        file.write("    bpy.ops.ed.lib_id_load_custom_preview(filepath=test_path)\n")
+
+        file.write("bpy.ops.wm.save_mainfile()\n")
+        file.close()
+        return os.path.join(bpy.app.tempdir,'asset_temp.py')
+    
+    def get_children_list(self,obj):
+        obj_list = []
+        obj_list.append(obj.name)
+        for child in obj.children_recursive:
+            obj_list.append(child.name)
+        return obj_list
+
+    def get_thumbnail_path(self):
+        return os.path.join(os.path.dirname(__file__),'thumbnail.blend')
+    
+    def save_asset(self,context,obj_list,asset_name,is_insert=False):
+        path = cb_paths.get_cabinet_builder_asset_library(context).path
+        custom_user_library_path = os.path.join(path,"library.blend")
+        assets_folder_path = os.path.join(path,'assets')
+
+        if bpy.data.filepath == "":
+            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(bpy.app.tempdir,"temp_blend.blend"))
+
+        if not os.path.exists(custom_user_library_path):
+            library_script_path = self.create_empty_library_script(custom_user_library_path)
+            create_library_command = [bpy.app.binary_path,"-b","--python",library_script_path]
+            subprocess.call(create_library_command)
+
+        if not os.path.exists(assets_folder_path):
+            os.makedirs(assets_folder_path)
+
+        # obj_list = self.get_children_list(context)
+
+        current_rotation = self.get_current_view_rotation(context)
+        rotation = (current_rotation.to_euler().x,current_rotation.to_euler().y,current_rotation.to_euler().z)
+
+        thumbnail_script_path = self.create_assembly_thumbnail_script(assets_folder_path, bpy.data.filepath, asset_name, obj_list, rotation)
+        save_script_path = self.create_assembly_save_script(assets_folder_path, bpy.data.filepath, asset_name, obj_list)
+        asset_script_path = self.create_asset_script(asset_name,os.path.join(assets_folder_path,asset_name + ".png"),is_insert=is_insert)
+
+        tn_command = [bpy.app.binary_path,self.get_thumbnail_path(),"-b","--python",thumbnail_script_path]
+        save_command = [bpy.app.binary_path,"-b","--python",save_script_path]
+        asset_command = [bpy.app.binary_path,custom_user_library_path,"-b","--python",asset_script_path]
+        
+        subprocess.call(save_command)
+        subprocess.call(tn_command)
+        subprocess.call(asset_command)
+
+        user_library = cb_paths.get_cabinet_builder_asset_library(context)
+
+        workspace = context.workspace  
+        workspace.asset_library_reference = user_library.name
+
+
+class cabinet_builder_OT_save_cabinet(Save_Operator):
+    """Save New Face Frame Cabinet"""
+    bl_idname = "cabinet_builder.save_cabinet"
+    bl_label = 'Save Cabinet'
+
+    library_item_name: bpy.props.StringProperty(name="Library Item Name") # type: ignore
+
+    @classmethod
+    def poll(cls, context):
+        if not context.object:
+            return False
+        if 'IS_GeoNodeContainer' in context.object:
+            return True
+        return False
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self,'library_item_name',text="Name")
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=400)
+
+    def execute(self, context):
+        if 'IS_GeoNodeContainer' in context.object:
+            obj = context.object  
+            obj_list = self.get_children_list(obj)
+            self.save_asset(context,obj_list,self.library_item_name,is_insert=False)
+        return {'FINISHED'}
+
 classes = (
     cabinet_builder_OT_add_cabinet_container,
     cabinet_builder_OT_add_cabinet_part,
@@ -381,6 +685,11 @@ classes = (
     cabinet_builder_OT_get_vars_from_object,
     cabinet_builder_OT_remove_variable,
     cabinet_builder_OT_select_object,
+    cabinet_builder_OT_drag_library_item,
+    cabinet_builder_OT_click_library_item,
+    cabinet_builder_OT_add_user_library_category,
+    cabinet_builder_OT_change_library_category,
+    cabinet_builder_OT_save_cabinet,
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)    
