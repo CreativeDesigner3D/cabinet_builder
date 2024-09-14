@@ -257,7 +257,8 @@ class GeoNodeCabinetPart(GeoNodeMeshObject):
     def draw_ui(self,layout,context):
         box = layout.box()
         row = box.row()
-        row.label(text="Active Cabinet Part: " + self.obj.name)
+        row.label(text="Part Name:")
+        row.prop(self.obj,'name',text="")
         col = box.column(align=True)
         row = col.row(align=True)
         self.draw_input(row,'Length',text="Length")
