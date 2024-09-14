@@ -1,0 +1,17 @@
+schema_version = "1.0.0"
+id = "cabinet_builder"
+version = "0.0.1"
+name = "Cabinet Builder"
+tagline = "Tools for designing cabinetry."
+maintainer = "Andrew Peel <dev.andrewpeel@gmail.com>"
+type = "add-on"
+website = "https://creativedesigner3d.github.io/home_builder_3_docs/"
+tags = [
+    "3D View",
+    "Add Mesh",
+    "Modeling",
+    "User Interface"
+]
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
+permissions.files = "Load and save blender assets from disk"
