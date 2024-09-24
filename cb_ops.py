@@ -24,6 +24,25 @@ class cabinet_builder_OT_temp_operator(bpy.types.Operator):
         layout = self.layout
 
 
+class cabinet_builder_OT_container_prompts(bpy.types.Operator):
+    bl_idname = "cabinet_builder.container_prompts"
+    bl_label = "Container Prompts"
+    bl_description = "This will show the container prompts"
+
+    container = None
+
+    def invoke(self,context,event):
+        self.container = cb_types.GeoNodeContainer(context.object)
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=300)
+
+    def execute(self, context):  
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        self.container.draw_ui(layout,context)
+
 class cabinet_builder_OT_add_cabinet_container(bpy.types.Operator):
     bl_idname = "cabinet_builder.add_cabinet_container"
     bl_label = "Add Cabinet Container"
@@ -747,6 +766,7 @@ class cabinet_builder_OT_save_cabinet(Save_Operator):
         return {'FINISHED'}
 
 classes = (
+    cabinet_builder_OT_container_prompts,
     cabinet_builder_OT_add_cabinet_container,
     cabinet_builder_OT_add_cabinet_part,
     cabinet_builder_OT_add_opening,

@@ -9,7 +9,7 @@ class CABINET_BUILDER_MT_temp_menu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
 
-class CABINET_BUILDER_PT_main_panel(bpy.types.Panel):
+class CABINET_BUILDER_PT_cabinet_builder(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_label = "Cabinet Builder"
@@ -22,53 +22,73 @@ class CABINET_BUILDER_PT_main_panel(bpy.types.Panel):
         layout = self.layout
 
         col = layout.column(align=True)
-        row = col.row(align=True)
-        row.scale_y = 1.3
-        row.prop_enum(cb_scene, "main_tabs", 'BUILD', icon='MOD_BUILD') #MOD_EDGESPLIT
-        row.prop_enum(cb_scene, "main_tabs", 'LIBRARY', icon='ASSET_MANAGER') 
 
-        if cb_scene.main_tabs == 'BUILD':
-            box = col.box()
-            row = box.row()
-            row.label(text="Add:",icon='ADD')
-            row.operator('cabinet_builder.add_cabinet_container',text="Container")
+        box = col.box()
+        row = box.row()
+        row.label(text="Add:",icon='ADD')
+        row.operator('cabinet_builder.add_cabinet_container',text="Container")
 
-            obj = context.object
-            if obj:
-                container = None
-                if 'IS_GeoNodeContainer' in obj:
-                    container = obj
-                elif obj.parent and 'IS_GeoNodeContainer' in obj.parent:
-                    container = obj.parent
+        obj = context.object
+        if obj:
+            container = None
+            if 'IS_GeoNodeContainer' in obj:
+                container = obj
+            elif obj.parent and 'IS_GeoNodeContainer' in obj.parent:
+                container = obj.parent
 
-                if container:
-                    container = cb_types.GeoNodeContainer(container)
-                    container.draw_ui(col,context)
-
-        else:
-
-            layout.menu('CABINET_BUILDER_MT_library_categories',text=cb_scene.active_library_category)
-            layout.operator('cabinet_builder.save_cabinet')
-
-            workspace = context.workspace
-            wm = context.window_manager 
-            workspace.asset_library_reference = 'cabinet_builder_library'
-            activate_op_props, drag_op_props = layout.template_asset_view(
-                'cabinet_builder_library',
-                workspace,
-                "asset_library_reference",
-                wm.cabinet_builder,
-                "cabinet_builder_library_assets",
-                wm.cabinet_builder,
-                'cabinet_builder_library_index',
-                # filter_id_types={"filter_object"},
-                display_options={'NO_LIBRARY'},
-                # display_options={'NO_FILTER','NO_LIBRARY'},
-                activate_operator='cabinet_builder.click_library_item',
-                drag_operator='cabinet_builder.drag_library_item',            
-            )
+            if container:
+                container = cb_types.GeoNodeContainer(container)
+                container.draw_ui(col,context)
 
 
+
+class CABINET_BUILDER_PT_cabinet_materials(bpy.types.Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_label = "Cabinet Materials"
+    bl_category = "Cabinets"    
+    # bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        cb_scene = context.scene.cabinet_builder
+
+        layout = self.layout
+        layout.prop(cb_scene,'finished_surface_material')
+
+
+class CABINET_BUILDER_PT_cabinet_library(bpy.types.Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_label = "Cabinet Library"
+    bl_category = "Cabinets"    
+    # bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        cb_scene = context.scene.cabinet_builder
+
+        layout = self.layout
+
+        layout.menu('CABINET_BUILDER_MT_library_categories',text=cb_scene.active_library_category)
+        layout.operator('cabinet_builder.save_cabinet')
+
+        workspace = context.workspace
+        wm = context.window_manager 
+        workspace.asset_library_reference = 'cabinet_builder_library'
+        activate_op_props, drag_op_props = layout.template_asset_view(
+            'cabinet_builder_library',
+            workspace,
+            "asset_library_reference",
+            wm.cabinet_builder,
+            "cabinet_builder_library_assets",
+            wm.cabinet_builder,
+            'cabinet_builder_library_index',
+            # filter_id_types={"filter_object"},
+            display_options={'NO_LIBRARY'},
+            # display_options={'NO_FILTER','NO_LIBRARY'},
+            activate_operator='cabinet_builder.click_library_item',
+            drag_operator='cabinet_builder.drag_library_item',            
+        )
+        
 class CABINET_BUILDER_MT_library_categories(bpy.types.Menu):
     bl_label = "Custom User Library Categories"
 
@@ -89,7 +109,9 @@ class CABINET_BUILDER_MT_library_categories(bpy.types.Menu):
 
 classes = (
     CABINET_BUILDER_MT_temp_menu,
-    CABINET_BUILDER_PT_main_panel,
+    CABINET_BUILDER_PT_cabinet_builder,
+    CABINET_BUILDER_PT_cabinet_library,
+    CABINET_BUILDER_PT_cabinet_materials,
     CABINET_BUILDER_MT_library_categories,
 )
 

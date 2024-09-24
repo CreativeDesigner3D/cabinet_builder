@@ -81,10 +81,13 @@ class GeoNodeMeshObject():
         '''
         if name in self.mod.node_group.interface.items_tree:
             node_input = self.mod.node_group.interface.items_tree[name]
-            if icon == '':
-                layout.prop(self.mod,'["' + node_input.identifier + '"]',text=text)
+            if str(node_input.socket_type) == 'NodeSocketMaterial':
+                layout.prop_search(self.mod,'["' + node_input.identifier + '"]',bpy.data,'materials',text=text)
             else:
-                layout.prop(self.mod,'["' + node_input.identifier + '"]',text=text,icon=icon)
+                if icon == '':
+                    layout.prop(self.mod,'["' + node_input.identifier + '"]',text=text)
+                else:
+                    layout.prop(self.mod,'["' + node_input.identifier + '"]',text=text,icon=icon)
 
     def driver_input(self,name,expression="",variables=[]):
         input_identifier = ""
@@ -155,6 +158,7 @@ class GeoNodeContainer(GeoNodeMeshObject):
         path = os.path.join(GEO_NODE_PATH,class_name + ".blend")
         self.get_geo_node(path,class_name)
         self.obj['IS_GeoNodeContainer'] = True
+        self.obj['PROMPT_ID'] = "cabinet_builder.container_prompts"
         self.obj.name = name
         self.obj.hide_render = True
         self.coll = bpy.context.view_layer.active_layer_collection.collection
@@ -210,7 +214,8 @@ class GeoNodeContainer(GeoNodeMeshObject):
                         props.property_name = key
 
         if scene_cb.selected_tabs == 'CHILDREN':
-            row = box.row()
+            add_box = box.box()
+            row = add_box.row()
             row.label(text="Add")
             row.operator('cabinet_builder.add_cabinet_part',text="Cabinet Part").parent_name = self.obj.name
             row.operator('cabinet_builder.add_opening',text="Opening").parent_name = self.obj.name
@@ -240,14 +245,7 @@ class GeoNodeContainer(GeoNodeMeshObject):
                     if child.cabinet_builder.expand_object_info:
                         part = GeoNodeCabinetPart(child)
                         part.draw_ui(mesh_col,context)                        
-                        # row = mesh_col.row()
-                        # row.label(text="",icon='BLANK1')
-                        # col = row.column(align=True)
-                        # box = col.box()
-                        # row = box.row()
-                        # row.prop(context.scene.pyclone,'object_tabs',expand=True)
-                        # box = col.box()
-                        # draw_object_properties(context,box,child)
+
 
                 # col = box.column(align=True)
                 # for child in self.obj.children:
@@ -278,21 +276,41 @@ class GeoNodeCabinetPart(GeoNodeMeshObject):
         bpy.context.view_layer.active_layer_collection.collection.objects.link(self.obj)
 
     def draw_ui(self,layout,context):
+        scene_cb = context.scene.cabinet_builder
+
         box = layout.box()
         row = box.row()
         row.label(text="Part Name:")
         row.prop(self.obj,'name',text="")
-        col = box.column(align=True)
-        row = col.row(align=True)
-        self.draw_input(row,'Length',text="Length")
-        self.draw_input(row,'Mirror X',text="",icon='MOD_MIRROR')
-        row = col.row(align=True)
-        self.draw_input(row,'Width',text="Width")
-        self.draw_input(row,'Mirror Y',text="",icon='MOD_MIRROR')
-        row = col.row(align=True)
-        self.draw_input(row,'Thickness',text="Thickness")
-        self.draw_input(row,'Mirror Z',text="",icon='MOD_MIRROR')
 
-        self.draw_transform_ui(box)
+        row = box.row()
+        row.prop(scene_cb,'selected_object_tabs',expand=True)
 
-      
+        if scene_cb.selected_object_tabs == 'MAIN':
+            # row.label(text="",icon='BLANK1')
+                    
+            col = box.column(align=True)
+            row = col.row(align=True)
+            self.draw_input(row,'Length',text="Length")
+            self.draw_input(row,'Mirror X',text="",icon='MOD_MIRROR')
+            row = col.row(align=True)
+            self.draw_input(row,'Width',text="Width")
+            self.draw_input(row,'Mirror Y',text="",icon='MOD_MIRROR')
+            row = col.row(align=True)
+            self.draw_input(row,'Thickness',text="Thickness")
+            self.draw_input(row,'Mirror Z',text="",icon='MOD_MIRROR')
+
+            self.draw_transform_ui(box)
+
+        if scene_cb.selected_object_tabs == 'MATERIALS':
+            col = box.column(align=True)
+            self.draw_input(col,'Top Surface',text="Top Surface")   
+            self.draw_input(col,'Bottom Surface',text="Bottom Surface") 
+            self.draw_input(col,'Edge W1',text="Edge W1") 
+            self.draw_input(col,'Edge W2',text="Edge W2") 
+            self.draw_input(col,'Edge L1',text="Edge L1") 
+            self.draw_input(col,'Edge L2',text="Edge L2") 
+
+        if scene_cb.selected_object_tabs == 'MODIFIERS':
+            col = box.column(align=True)
+            col.label(text="Add Modifier")

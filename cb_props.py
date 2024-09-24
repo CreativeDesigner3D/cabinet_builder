@@ -34,17 +34,31 @@ class Scene_Cabinet_Builder(PropertyGroup):
                                  ('SHOW_SELECTED',"Show Selected","Show the Selected Child")],
                           default='SHOW_ALL')# type: ignore  
 
-    selected_tabs: EnumProperty(name="Main Tabs",
+    selected_tabs: EnumProperty(name="Selected Tabs",
                           items=[('MAIN',"Main","Show the Main UI"),
                                  ('PROPERTIES',"Properties","Show the Properties"),
                                  ('CHILDREN',"Children","Show the Children"),
                                  ('DRIVERS',"Drivers","Show the Drivers")],
                           default='MAIN')# type: ignore  
 
+    selected_object_tabs: EnumProperty(name="Selected Object Tabs",
+                          items=[('MAIN',"Main","Show the Main UI"),
+                                 ('MATERIALS',"Materials","Show the Material Properties"),
+                                 ('MODIFIERS',"Modifiers","Show the Modifiers")],
+                          default='MAIN')# type: ignore  
+    
     variable_object: PointerProperty(name="Variable Object",type=bpy.types.Object)# type: ignore
 
     active_library_category: StringProperty(name="Active Library Category")# type: ignore
 
+    finished_surface_material: PointerProperty(name="Finish Surface Material",type=bpy.types.Material)# type: ignore
+    unfinished_surface_material: PointerProperty(name="Finish Surface Material",type=bpy.types.Material)# type: ignore
+    semi_finished_surface_material: PointerProperty(name="Semi Finish Surface Material",type=bpy.types.Material)# type: ignore
+
+    finished_edge_material: PointerProperty(name="Finish Edge Material",type=bpy.types.Material)# type: ignore
+    unfinished_edge_material: PointerProperty(name="Finish Edge Material",type=bpy.types.Material)# type: ignore
+    semi_finished_edge_material: PointerProperty(name="Semi Finish Edge Material",type=bpy.types.Material)# type: ignore
+    
     @classmethod
     def register(cls):
         bpy.types.Scene.cabinet_builder = PointerProperty(
