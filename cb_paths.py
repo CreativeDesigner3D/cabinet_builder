@@ -1,6 +1,9 @@
 import bpy
 import os
 
+def get_cabinet_part_modifier_path():
+    return os.path.join(os.path.dirname(__file__),'GeometryNodes','CabinetPartModifiers')
+
 def get_cabinet_builder_asset_library(context):
     prefs = bpy.context.preferences
     cabinet_builder_library = prefs.filepaths.asset_libraries.get("cabinet_builder_library")

@@ -136,7 +136,7 @@ class Object_Cabinet_Builder(PropertyGroup):
         if type(value).__name__ == 'str':
             row.label(text=driver_name + " = " + str(value),icon='AUTO')
         elif type(value).__name__ == 'float':
-            row.label(text=driver_name + " = " + str(value),icon='AUTO')
+            row.label(text=driver_name + " = " + str(round(value,2) + 'm'),icon='AUTO')
         elif type(value).__name__ == 'int':
             row.label(text=driver_name + " = " + str(value),icon='AUTO')
         elif type(value).__name__ == 'bool':

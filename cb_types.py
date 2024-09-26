@@ -2,7 +2,7 @@ import bpy
 import os
 import math
 import rna_prop_ui
-from . import cb_unit
+from . import cb_unit, cb_paths
 
 GEO_NODE_PATH = os.path.join(os.path.dirname(__file__),'GeometryNodes')
 
@@ -314,3 +314,66 @@ class GeoNodeCabinetPart(GeoNodeMeshObject):
         if scene_cb.selected_object_tabs == 'MODIFIERS':
             col = box.column(align=True)
             col.label(text="Add Modifier")
+            col.menu('CABINET_BUILDER_MT_add_cabinet_part_modifier')
+
+            for mod in self.obj.modifiers:
+                if mod.type == 'NODES':
+                    node = mod.node_group
+                    if 'CPM_' in node.name:
+                        cpm = CabinetPartModifier(self.obj,mod)
+                        cpm.draw_ui(col,self)
+
+class CabinetPartModifier(GeoNodeMeshObject):
+    
+    obj = None
+    mod = None
+    node_group = None
+
+    def __init__(self,obj=None,mod=None):
+        if obj:
+            self.obj = obj
+            if mod:
+                self.mod = mod
+                self.node_group = mod.node_group            
+
+    def get_token_node(self,token_type):
+        path = cb_paths.get_cabinet_part_modifier_path()
+        token_path = os.path.join(path,token_type + ".blend")
+
+        if token_type in bpy.data.node_groups:
+            return bpy.data.node_groups[token_type]
+
+        if os.path.exists(token_path):
+
+            with bpy.data.libraries.load(token_path) as (data_from, data_to):
+                for ng in data_from.node_groups:
+                    if ng == token_type:
+                        data_to.node_groups = [ng]
+                        break    
+            
+            for ng in data_to.node_groups:
+                return ng    
+
+    def add_token(self,token_type,token_name):
+        node_group = self.get_token_node(token_type)
+        self.mod = self.obj.modifiers.new(name=token_name,type='NODES')
+        self.mod.node_group = node_group
+        self.node_group = node_group
+        self.mod.show_expanded = False
+        # self.mod.show_viewport = False
+        # self.mod.show_render = False     
+        # 
+
+    def draw_ui(self,layout,part):
+        token_type = self.node_group.name.replace("CPM_","")
+        t_box = layout.box()
+        row = t_box.row()
+        row.prop(self.mod,'show_expanded',text="",emboss=False)
+        row.label(text=token_type)
+        row.prop(self.mod,'name',text="")
+        row.prop(self.mod,'show_viewport',text="",emboss=False)
+        row.operator('cabinet_builder.remove_cabinet_part_modifier',text="",icon='X',emboss=False).modifier_name = self.mod.name
+        if self.mod.show_expanded:
+            for n_input in self.node_group.interface.items_tree:
+                if n_input.identifier in self.mod:
+                    t_box.prop(self.mod,'["' + n_input.identifier + '"]',text=n_input.name)#                    
