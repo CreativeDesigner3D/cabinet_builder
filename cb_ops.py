@@ -3,7 +3,7 @@ import os
 import subprocess
 import codecs
 from mathutils import Vector
-from . import cb_types, cb_unit, cb_paths, cb_snap
+from . import cb_types, cb_unit, cb_paths, cb_snap, cb_utils
 from rna_prop_ui import rna_idprop_quote_path
 
 class cabinet_builder_OT_temp_operator(bpy.types.Operator):
@@ -772,9 +772,9 @@ class cabinet_builder_OT_add_cabinet_part_modifier(bpy.types.Operator):
     bl_label = "Add Cabinet Part Modifier"
     bl_description = "This will add a cabinet part modifier"
 
-    token_type: bpy.props.StringProperty(name="Token Type") # type: ignore
+    modifier_type: bpy.props.StringProperty(name="Modifier Type") # type: ignore
 
-    token_name: bpy.props.StringProperty(name="Token Name",default="Token Name") # type: ignore
+    modifier_name: bpy.props.StringProperty(name="Modifier Name",default="Modifier Name") # type: ignore
 
     def invoke(self,context,event):
         wm = context.window_manager
@@ -782,31 +782,32 @@ class cabinet_builder_OT_add_cabinet_part_modifier(bpy.types.Operator):
     
     def draw(self, context):
         layout = self.layout
-        layout.prop(self,'token_name')
+        layout.prop(self,'modifier_name')
 
     def execute(self, context):
+        pb = cb_utils.get_particle_board_material()
+
         obj = context.object
         cpm = cb_types.CabinetPartModifier(obj)
-        cpm.add_token(self.token_type,self.token_name)
+        cpm.add_node(self.modifier_type,self.modifier_name)
         cpm.mod.show_viewport = True
-        if self.token_type == '3SIDEDNOTCH':
+        if '3SIDEDNOTCH' in self.modifier_type:
             cpm.set_input('X',cb_unit.inch(5))
             cpm.set_input('Y',cb_unit.inch(3))
-            cpm.set_input('Route Depth',cb_unit.inch(.75))        
-        if self.token_type == 'CORNERNOTCH':
+            cpm.set_input('Route Depth',cb_unit.inch(.75))    
+            cpm.set_input('Material',pb)                
+        if 'CORNERNOTCH' in self.modifier_type:
             cpm.set_input('X',cb_unit.inch(5))
             cpm.set_input('Y',cb_unit.inch(3))
             cpm.set_input('Route Depth',cb_unit.inch(.75))
-        if self.token_type == 'CUTOUT':
-            mat = None
-            if 'PB' in bpy.data.materials:
-                mat = bpy.data.materials['PB']            
+            cpm.set_input('Material',pb) 
+        if 'CUTOUT' in self.modifier_type:           
             cpm.set_input('X',cb_unit.inch(1))    
             cpm.set_input('Y',cb_unit.inch(1))      
             cpm.set_input('Route Depth',cb_unit.inch(.76))   
             cpm.set_input('End X',cb_unit.inch(5))
             cpm.set_input('End Y',cb_unit.inch(5))   
-            cpm.set_input('Material',mat)  
+            cpm.set_input('Material',pb)
         return {'FINISHED'}
 
 

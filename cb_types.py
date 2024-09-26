@@ -2,7 +2,7 @@ import bpy
 import os
 import math
 import rna_prop_ui
-from . import cb_unit, cb_paths
+from . import cb_unit, cb_utils, cb_paths
 
 GEO_NODE_PATH = os.path.join(os.path.dirname(__file__),'GeometryNodes')
 
@@ -274,7 +274,14 @@ class GeoNodeCabinetPart(GeoNodeMeshObject):
         self.obj.name = name       
         self.obj.color = (1,1,1,1)
         bpy.context.view_layer.active_layer_collection.collection.objects.link(self.obj)
-
+        pb = cb_utils.get_particle_board_material()
+        self.set_input('Top Surface',pb)
+        self.set_input('Bottom Surface',pb)
+        self.set_input('Edge W1',pb)
+        self.set_input('Edge W2',pb)
+        self.set_input('Edge L1',pb)
+        self.set_input('Edge L2',pb)
+    
     def draw_ui(self,layout,context):
         scene_cb = context.scene.cabinet_builder
 
@@ -336,7 +343,7 @@ class CabinetPartModifier(GeoNodeMeshObject):
                 self.mod = mod
                 self.node_group = mod.node_group            
 
-    def get_token_node(self,token_type):
+    def get_node(self,token_type):
         path = cb_paths.get_cabinet_part_modifier_path()
         token_path = os.path.join(path,token_type + ".blend")
 
@@ -354,15 +361,12 @@ class CabinetPartModifier(GeoNodeMeshObject):
             for ng in data_to.node_groups:
                 return ng    
 
-    def add_token(self,token_type,token_name):
-        node_group = self.get_token_node(token_type)
+    def add_node(self,token_type,token_name):
+        node_group = self.get_node(token_type)
         self.mod = self.obj.modifiers.new(name=token_name,type='NODES')
         self.mod.node_group = node_group
         self.node_group = node_group
         self.mod.show_expanded = False
-        # self.mod.show_viewport = False
-        # self.mod.show_render = False     
-        # 
 
     def draw_ui(self,layout,part):
         token_type = self.node_group.name.replace("CPM_","")
