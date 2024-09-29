@@ -218,6 +218,7 @@ class GeoNodeContainer(GeoNodeMeshObject):
             row = add_box.row()
             row.label(text="Add")
             row.operator('cabinet_builder.add_cabinet_part',text="Cabinet Part").parent_name = self.obj.name
+            row.operator('cabinet_builder.add_object',text="Object").parent_name = self.obj.name
             row.operator('cabinet_builder.add_opening',text="Opening").parent_name = self.obj.name
             row = box.row()
             row.prop(scene_cb,'children_tabs',expand=True)
@@ -227,31 +228,28 @@ class GeoNodeContainer(GeoNodeMeshObject):
                 if obj and 'IS_GeoNodeCabinetPart' in obj:
                     part = GeoNodeCabinetPart(obj)
                     part.draw_ui(col,context)
+                if obj and 'IS_GeoNodeObject' in obj:
+                    part = GeoNodeObject(obj)
+                    part.draw_ui(col,context)
             else:
                 mesh_col = box.column(align=True)
                 for child in self.obj.children:
                     row = mesh_col.row(align=True)
                     if child == context.object:
                         icon = 'RADIOBUT_ON'
-                        # row.label(text="",icon='RADIOBUT_ON')
                     elif child in context.selected_objects:
                         icon = 'DECORATE'
-                        # row.label(text="",icon='DECORATE')
                     else:
                         icon = 'RADIOBUT_OFF'
-                        # row.label(text="",icon='RADIOBUT_OFF')
                     row.operator('cabinet_builder.select_object',text=child.name,icon=icon).obj_name = child.name
                     row.prop(child.cabinet_builder,'expand_object_info',text="",icon='DISCLOSURE_TRI_DOWN' if child.cabinet_builder.expand_object_info else 'DISCLOSURE_TRI_RIGHT')
                     if child.cabinet_builder.expand_object_info:
-                        part = GeoNodeCabinetPart(child)
-                        part.draw_ui(mesh_col,context)                        
-
-
-                # col = box.column(align=True)
-                # for child in self.obj.children:
-                #     if 'IS_GeoNodeCabinetPart' in child:
-                #         part = GeoNodeCabinetPart(child)
-                #         part.draw_ui(col,context)
+                        if child and 'IS_GeoNodeCabinetPart' in child:
+                            part = GeoNodeCabinetPart(child)
+                            part.draw_ui(mesh_col,context)                        
+                        if child and 'IS_GeoNodeObject' in child:
+                            part = GeoNodeObject(child)
+                            part.draw_ui(mesh_col,context)
 
         if scene_cb.selected_tabs == 'DRIVERS':
             obj = context.object
@@ -263,6 +261,34 @@ class GeoNodeContainer(GeoNodeMeshObject):
                 obj.cabinet_builder.draw_driver(box,context,driver)
                 # box.label(text="Driver: " + driver.data_path)
 
+
+class GeoNodeObject(GeoNodeMeshObject):
+
+    geo_node_name = "GeoNodeHardware"
+
+    mod = None
+    coll = None
+
+    def create(self,name=""):
+        class_name = self.__class__.__name__
+        path = os.path.join(GEO_NODE_PATH,class_name + ".blend")
+        self.get_geo_node(path,class_name)                
+        self.obj.name = name
+        self.obj["IS_GeoNodeObject"] = class_name
+        self.mod.node_group.interface_update(bpy.context)
+        bpy.context.view_layer.active_layer_collection.collection.objects.link(self.obj)
+        self.obj.color = (.5,.5,.5,1)
+
+    def draw_ui(self,layout,context):
+        scene_cb = context.scene.cabinet_builder
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="Part Name:")
+        row.prop(self.obj,'name',text="")
+        self.draw_input(box,'Object',text="Object")
+
+        self.draw_transform_ui(box) 
 
 class GeoNodeCabinetPart(GeoNodeMeshObject):
     

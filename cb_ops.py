@@ -196,6 +196,35 @@ class cabinet_builder_OT_add_opening(bpy.types.Operator):
         layout.prop(self,'opening_depth')
 
 
+class cabinet_builder_OT_add_object(bpy.types.Operator):
+    bl_idname = "cabinet_builder.add_object"
+    bl_label = "Add Object"
+    bl_description = "This will add an object"
+
+    parent_name: bpy.props.StringProperty(name="Parent Name")# type: ignore
+
+    part_name: bpy.props.StringProperty(name="Part Name")# type: ignore
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=300)
+
+    def execute(self, context):  
+        if self.parent_name == "":
+            parent = None
+        else:
+            parent = bpy.data.objects[self.parent_name]
+        part = cb_types.GeoNodeObject()
+        part.create(self.part_name)
+        part.obj.parent = parent
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.prop(self,'part_name')
+
+
 class cabinet_builder_OT_add_property(bpy.types.Operator):
     bl_idname = "cabinet_builder.add_property"
     bl_label = "Add Property"
@@ -776,9 +805,16 @@ class cabinet_builder_OT_add_cabinet_part_modifier(bpy.types.Operator):
 
     modifier_name: bpy.props.StringProperty(name="Modifier Name",default="Modifier Name") # type: ignore
 
+    @classmethod
+    def poll(cls, context):
+        if context.object and 'IS_GeoNodeCabinetPart' in context.object:
+            return True
+        else:
+            return False
+        
     def invoke(self,context,event):
         wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=300)
+        return wm.invoke_props_dialog(self, width=400)
     
     def draw(self, context):
         layout = self.layout
@@ -834,6 +870,7 @@ classes = (
     cabinet_builder_OT_add_cabinet_container,
     cabinet_builder_OT_add_cabinet_part,
     cabinet_builder_OT_add_opening,
+    cabinet_builder_OT_add_object,
     cabinet_builder_OT_add_property,
     Variables,
     cabinet_builder_OT_get_vars_from_object,

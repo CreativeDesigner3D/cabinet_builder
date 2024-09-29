@@ -117,7 +117,7 @@ class CABINET_BUILDER_MT_add_cabinet_part_modifier(bpy.types.Menu):
         for token_file in tokens:
             filename, ext = os.path.splitext(token_file)
             if ext == '.blend':
-                layout.operator('cabinet_builder.add_cabinet_part_modifier',text=filename).token_type = filename
+                layout.operator('cabinet_builder.add_cabinet_part_modifier',text=filename).modifier_type = filename
 
 classes = (
     CABINET_BUILDER_MT_temp_menu,
