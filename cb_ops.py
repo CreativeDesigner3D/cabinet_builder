@@ -865,6 +865,246 @@ class cabinet_builder_OT_remove_cabinet_part_modifier(bpy.types.Operator):
         return {'FINISHED'}
     
 
+class cabinet_builder_OT_drop_material(cb_snap.Drop_Operator):
+    bl_idname = "cabinet_builder.drop_material"
+    bl_label = "Drop Material"
+
+    mat = None
+    region = None
+
+    @classmethod
+    def poll(cls, context):  
+        if context.object and context.object.mode != 'OBJECT':
+            return False
+        return True
+        
+    def execute(self, context):
+        self.setup_drop_operator(context)
+        self.mat = self.get_material(context)      
+        context.window_manager.modal_handler_add(self)
+        context.area.tag_redraw()
+        return {'RUNNING_MODAL'}
+        
+    def get_material(self,context):
+        asset_file_handle = context.asset
+        return cb_utils.get_material(asset_file_handle.full_library_path,asset_file_handle.name)
+
+    def modal(self, context, event):
+        context.window.cursor_set('PAINT_BRUSH')
+
+        self.mouse_pos = Vector((event.mouse_x - self.region.x, event.mouse_y - self.region.y))  
+        context.view_layer.update()          
+        cb_snap.main(self, event.ctrl, context)
+
+        bpy.ops.object.select_all(action='DESELECT')
+        if self.hit_object:
+            self.hit_object.select_set(True)
+            context.view_layer.objects.active = self.hit_object
+        
+            if self.event_is_place_asset(event):
+                
+                show_material_dialog = False
+                for mod in self.hit_object.modifiers:
+                    if mod.type == 'NODES':
+                        if mod.node_group:
+                            for input in mod.node_group.interface.items_tree:
+                                if input.socket_type == 'NodeSocketMaterial':
+                                    show_material_dialog = True
+                                    break
+
+                if len(self.hit_object.material_slots) > 0:
+                    show_material_dialog = True
+
+                if show_material_dialog == True:
+                    bpy.ops.cabinet_builder.assign_geo_node_material_dialog('INVOKE_DEFAULT',material_name = self.mat.name, object_name = self.hit_object.name)
+                else:
+                    if len(self.hit_object.material_slots) == 0:
+                        bpy.ops.object.material_slot_add()
+
+                    for slot in self.hit_object.material_slots:
+                        slot.material = self.mat
+ 
+                return self.finish(context)
+
+        if event.type in {'RIGHTMOUSE', 'ESC'}:
+            return self.cancel_drop(context)
+        
+        if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+            return {'PASS_THROUGH'}        
+        
+        return {'RUNNING_MODAL'}
+
+    def cancel_drop(self,context):
+        context.window.cursor_set('DEFAULT')
+        return {'CANCELLED'}
+    
+    def finish(self,context):
+        context.window.cursor_set('DEFAULT')
+        context.area.tag_redraw()
+        return {'FINISHED'}
+
+
+class cabinet_builder_OT_assign_geo_node_material_dialog(bpy.types.Operator):
+    bl_idname = "cabinet_builder.assign_geo_node_material_dialog"
+    bl_label = "Assign Geo Node Material Dialog"
+    bl_description = "This is a dialog to assign materials to Geometry Node Inputs"
+    bl_options = {'UNDO'}
+    
+    #READONLY
+    material_name: bpy.props.StringProperty(name="Material Name")# type: ignore
+    object_name: bpy.props.StringProperty(name="Object Name")# type: ignore
+    
+    obj = None
+    material = None
+    geo_object = None
+    
+    def check(self, context):
+        return True
+    
+    def invoke(self, context, event):
+        self.material = bpy.data.materials[self.material_name]
+        self.obj = bpy.data.objects[self.object_name]
+        self.geo_object = cb_types.GeoNodeObject(self.obj)
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=480)
+        
+    def has_node_inputs(self):
+        for mod in self.obj.modifiers:
+            if mod.type == 'NODES':
+                if mod.node_group:
+                    for input in mod.node_group.interface.items_tree:
+                        if input.socket_type == 'NodeSocketMaterial':
+                            return True 
+
+    def draw(self,context):
+        layout = self.layout
+        box = layout.box()
+        row = box.row()
+        row.label(text=self.obj.name,icon='OBJECT_DATA')
+        props = row.operator('cabinet_builder.assign_material_to_all_geo_node_inputs',text="Update All Inputs",icon='DOWNARROW_HLT')
+        props.object_name = self.obj.name
+        props.material_name = self.material.name
+
+        for mod in self.obj.modifiers:
+            if mod.type == 'NODES':
+                if mod.node_group:  
+                    box = layout.box()
+                    box.label(text=mod.name)
+                    for input in mod.node_group.interface.items_tree:
+                        if input.socket_type == 'NodeSocketMaterial': 
+                            mat = mod[input.identifier]
+                            if mat:
+                                mat_name = mat.name
+                            else:
+                                mat_name = "None"                            
+                            row = box.row()
+                            row.label(text=input.name + " - " + mat_name)
+
+                            props = row.operator('cabinet_builder.assign_material_to_geo_input',text="Update")
+                            props.object_name = self.obj.name
+                            props.material_name = self.material.name
+                            props.input_name = input.name
+                            props.modifier_name = mod.name
+
+        if len(self.obj.material_slots) > 0:
+            box = layout.box()
+            row = box.row()
+            row.label(text="Material Slots")
+            props = row.operator('cabinet_builder.assign_material_to_all_slots',text="Update All Slots",icon='DOWNARROW_HLT')
+            props.object_name = self.obj.name
+            props.material_name = self.material.name
+            
+            for i, slot in enumerate(self.obj.material_slots):
+                row = box.row()
+                row.label(text="Slot " + str(i+1) + " - " + slot.name)
+                props = row.operator('cabinet_builder.assign_material_to_slot',text="Update")
+                props.object_name = self.obj.name
+                props.material_name = self.material.name
+                props.index = i
+
+    def execute(self,context):   
+        return {'FINISHED'}
+
+
+class cabinet_builder_OT_assign_material_to_geo_input(bpy.types.Operator):
+    bl_idname = "cabinet_builder.assign_material_to_geo_input"
+    bl_label = "Assign Material to a Geo Input"
+    bl_description = "This will assign a material to a geo input"
+    bl_options = {'UNDO'}
+    
+    #READONLY
+    material_name: bpy.props.StringProperty(name="Material Name")# type: ignore
+    object_name: bpy.props.StringProperty(name="Object Name")# type: ignore
+    input_name: bpy.props.StringProperty(name="Input Name")# type: ignore
+    modifier_name: bpy.props.StringProperty(name="Modifer Name")# type: ignore
+    
+    def execute(self,context):
+        obj = bpy.data.objects[self.object_name]
+        mat = bpy.data.materials[self.material_name]
+        geo_object = cb_types.GeoNodeObject()
+        geo_object.get_geo_object_from_name(obj,self.modifier_name)
+        geo_object.set_input(self.input_name,mat)
+        return {'FINISHED'}
+    
+
+class cabinet_builder_OT_assign_material_to_slot(bpy.types.Operator):
+    bl_idname = "cabinet_builder.assign_material_to_slot"
+    bl_label = "Assign Material to Slot"
+    bl_description = "This will assign a material to a material slot"
+    bl_options = {'UNDO'}
+    
+    #READONLY
+    material_name: bpy.props.StringProperty(name="Material Name")# type: ignore
+    object_name: bpy.props.StringProperty(name="Object Name")# type: ignore
+    index: bpy.props.IntProperty(name="Index")# type: ignore
+    
+    def execute(self,context):
+        obj = bpy.data.objects[self.object_name]
+        mat = bpy.data.materials[self.material_name]
+        obj.material_slots[self.index].material = mat
+        return {'FINISHED'}
+
+
+class cabinet_builder_OT_assign_material_to_all_slots(bpy.types.Operator):
+    bl_idname = "cabinet_builder.assign_material_to_all_slots"
+    bl_label = "Assign Material to All Slots"
+    bl_description = "This will assign a material to all material slots"
+    bl_options = {'UNDO'}
+    
+    #READONLY
+    material_name: bpy.props.StringProperty(name="Material Name")# type: ignore
+    object_name: bpy.props.StringProperty(name="Object Name")# type: ignore
+    
+    def execute(self,context):
+        obj = bpy.data.objects[self.object_name]
+        mat = bpy.data.materials[self.material_name]
+        for slot in obj.material_slots:
+            slot.material = mat
+        return {'FINISHED'}
+
+
+class cabinet_builder_OT_assign_material_to_all_geo_node_inputs(bpy.types.Operator):
+    bl_idname = "cabinet_builder.assign_material_to_all_geo_node_inputs"
+    bl_label = "Assign Material to All Geo Node Inputs"
+    bl_description = "This will assign a material to all geo node inputs"
+    bl_options = {'UNDO'}
+    
+    #READONLY
+    material_name: bpy.props.StringProperty(name="Material Name")# type: ignore
+    object_name: bpy.props.StringProperty(name="Object Name")# type: ignore
+    
+    def execute(self,context):
+        mat = bpy.data.materials[self.material_name]
+        self.obj = bpy.data.objects[self.object_name]
+        self.geo_object = cb_types.GeoNodeObject(self.obj)        
+        node = self.geo_object.mod.node_group
+        for input in node.interface.items_tree:
+            if input.socket_type == 'NodeSocketMaterial':
+                self.geo_object.set_input(input.name,mat)
+                # self.geo_object.mod[input.identifier] = mat
+        return {'FINISHED'}
+
+
 classes = (
     cabinet_builder_OT_container_prompts,
     cabinet_builder_OT_add_cabinet_container,
@@ -883,6 +1123,12 @@ classes = (
     cabinet_builder_OT_save_cabinet,
     cabinet_builder_OT_add_cabinet_part_modifier,
     cabinet_builder_OT_remove_cabinet_part_modifier,
+    cabinet_builder_OT_drop_material,
+    cabinet_builder_OT_assign_geo_node_material_dialog,
+    cabinet_builder_OT_assign_material_to_geo_input,
+    cabinet_builder_OT_assign_material_to_slot,
+    cabinet_builder_OT_assign_material_to_all_slots,
+    cabinet_builder_OT_assign_material_to_all_geo_node_inputs
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)    

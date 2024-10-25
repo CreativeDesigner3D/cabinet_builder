@@ -46,6 +46,10 @@ def load_cabinet_builder_library(dummy):
     cabinet_builder_library = cb_paths.get_cabinet_builder_asset_library(bpy.context)
     cabinet_builder_library.path = path
 
+    mat_path = cb_paths.get_active_material_library_path(bpy.context)
+    cabinet_builder_material_library = cb_paths.get_cabinet_builder_material_library(bpy.context)
+    cabinet_builder_material_library.path = mat_path
+
 def register():
     cb_props.register()
     cb_ui.register()

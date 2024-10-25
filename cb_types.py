@@ -279,6 +279,13 @@ class GeoNodeObject(GeoNodeMeshObject):
         bpy.context.view_layer.active_layer_collection.collection.objects.link(self.obj)
         self.obj.color = (.5,.5,.5,1)
 
+    def get_geo_object_from_name(self,obj,name):
+        self.obj = obj
+        for mod in self.obj.modifiers:
+            if mod.type == 'NODES' and mod.name == name:
+                self.mod = mod
+                break     
+
     def draw_ui(self,layout,context):
         scene_cb = context.scene.cabinet_builder
 
@@ -289,6 +296,7 @@ class GeoNodeObject(GeoNodeMeshObject):
         self.draw_input(box,'Object',text="Object")
 
         self.draw_transform_ui(box) 
+
 
 class GeoNodeCabinetPart(GeoNodeMeshObject):
     

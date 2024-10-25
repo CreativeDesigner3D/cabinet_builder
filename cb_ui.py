@@ -55,6 +55,24 @@ class CABINET_BUILDER_PT_cabinet_materials(bpy.types.Panel):
         layout = self.layout
         layout.prop(cb_scene,'finished_surface_material')
 
+        workspace = context.workspace
+        wm = context.window_manager 
+        workspace.asset_library_reference = 'cabinet_builder_material_library'
+        activate_op_props, drag_op_props = layout.template_asset_view(
+            'cabinet_builder_material_library',
+            workspace,
+            "asset_library_reference",
+            wm.cabinet_builder,
+            "cabinet_builder_material_assets",
+            wm.cabinet_builder,
+            'cabinet_builder_material_index',
+            # filter_id_types={"filter_object"},
+            display_options={'NO_LIBRARY'},
+            # display_options={'NO_FILTER','NO_LIBRARY'},
+            activate_operator='cabinet_builder.click_library_item',
+            drag_operator='cabinet_builder.drop_material',            
+        )        
+
 
 class CABINET_BUILDER_PT_cabinet_library(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'

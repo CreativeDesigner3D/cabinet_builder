@@ -50,7 +50,8 @@ class Scene_Cabinet_Builder(PropertyGroup):
     variable_object: PointerProperty(name="Variable Object",type=bpy.types.Object)# type: ignore
 
     active_library_category: StringProperty(name="Active Library Category")# type: ignore
-
+    active_material_library_category: StringProperty(name="Active Material Library Category")# type: ignore
+    
     finished_surface_material: PointerProperty(name="Finish Surface Material",type=bpy.types.Material)# type: ignore
     unfinished_surface_material: PointerProperty(name="Finish Surface Material",type=bpy.types.Material)# type: ignore
     semi_finished_surface_material: PointerProperty(name="Semi Finish Surface Material",type=bpy.types.Material)# type: ignore
@@ -194,6 +195,11 @@ class Window_Manager_Cabinet_Builder(PropertyGroup):
         type=bpy.types.AssetHandle,
         description="Current Set of Assets In Asset Browser")# type: ignore  
     
+    cabinet_builder_material_index: IntProperty(name="Cabinet Builder Index",description="",default=0)# type: ignore
+    cabinet_builder_material_assets: bpy.props.CollectionProperty(
+        type=bpy.types.AssetHandle,
+        description="Current Set of Materials Browser")# type: ignore  
+
     @classmethod
     def register(cls):
         bpy.types.WindowManager.cabinet_builder = PointerProperty(
