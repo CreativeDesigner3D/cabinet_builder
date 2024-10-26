@@ -51,7 +51,8 @@ class Scene_Cabinet_Builder(PropertyGroup):
 
     active_library_category: StringProperty(name="Active Library Category")# type: ignore
     active_material_library_category: StringProperty(name="Active Material Library Category")# type: ignore
-    
+    active_object_library_category: StringProperty(name="Active Object Library Category")# type: ignore
+
     finished_surface_material: PointerProperty(name="Finish Surface Material",type=bpy.types.Material)# type: ignore
     unfinished_surface_material: PointerProperty(name="Finish Surface Material",type=bpy.types.Material)# type: ignore
     semi_finished_surface_material: PointerProperty(name="Semi Finish Surface Material",type=bpy.types.Material)# type: ignore
@@ -193,13 +194,18 @@ class Window_Manager_Cabinet_Builder(PropertyGroup):
     cabinet_builder_library_index: IntProperty(name="Cabinet Builder Index",description="",default=0)# type: ignore
     cabinet_builder_library_assets: bpy.props.CollectionProperty(
         type=bpy.types.AssetHandle,
-        description="Current Set of Assets In Asset Browser")# type: ignore  
+        description="Current Set of Cabinet Assets")# type: ignore  
     
-    cabinet_builder_material_index: IntProperty(name="Cabinet Builder Index",description="",default=0)# type: ignore
+    cabinet_builder_material_index: IntProperty(name="Cabinet Builder Material Index",description="",default=0)# type: ignore
     cabinet_builder_material_assets: bpy.props.CollectionProperty(
         type=bpy.types.AssetHandle,
-        description="Current Set of Materials Browser")# type: ignore  
+        description="Current Set of Material Assets")# type: ignore  
 
+    cabinet_builder_object_index: IntProperty(name="Cabinet Builder Object Index",description="",default=0)# type: ignore
+    cabinet_builder_object_assets: bpy.props.CollectionProperty(
+        type=bpy.types.AssetHandle,
+        description="Current Set of Object Assets")# type: ignore  
+    
     @classmethod
     def register(cls):
         bpy.types.WindowManager.cabinet_builder = PointerProperty(

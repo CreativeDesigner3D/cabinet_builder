@@ -107,6 +107,38 @@ class CABINET_BUILDER_PT_cabinet_library(bpy.types.Panel):
             drag_operator='cabinet_builder.drag_library_item',            
         )
         
+
+class CABINET_BUILDER_PT_cabinet_objects(bpy.types.Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_label = "Cabinet Objects"
+    bl_category = "Cabinets"    
+    # bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        cb_scene = context.scene.cabinet_builder
+
+        layout = self.layout
+
+        workspace = context.workspace
+        wm = context.window_manager 
+        workspace.asset_library_reference = 'cabinet_builder_object_library'
+        activate_op_props, drag_op_props = layout.template_asset_view(
+            'cabinet_builder_object_library',
+            workspace,
+            "asset_library_reference",
+            wm.cabinet_builder,
+            "cabinet_builder_object_assets",
+            wm.cabinet_builder,
+            'cabinet_builder_object_index',
+            # filter_id_types={"filter_object"},
+            display_options={'NO_LIBRARY'},
+            # display_options={'NO_FILTER','NO_LIBRARY'},
+            activate_operator='cabinet_builder.click_library_item',
+            drag_operator='cabinet_builder.drop_object',            
+        )        
+
+
 class CABINET_BUILDER_MT_library_categories(bpy.types.Menu):
     bl_label = "Custom User Library Categories"
 
@@ -142,6 +174,7 @@ classes = (
     CABINET_BUILDER_PT_cabinet_builder,
     CABINET_BUILDER_PT_cabinet_library,
     CABINET_BUILDER_PT_cabinet_materials,
+    CABINET_BUILDER_PT_cabinet_objects,
     CABINET_BUILDER_MT_library_categories,
     CABINET_BUILDER_MT_add_cabinet_part_modifier
 )
