@@ -79,10 +79,33 @@ class Object_Cabinet_Builder(PropertyGroup):
     expand_object_info: BoolProperty(name="Expand Object Info",default=False)# type: ignore
 
     def add_property(self,name,type,value,combo_items=[]):
-        self.id_data[name] = value
-        self.id_data.id_properties_ensure()
-        pm = self.id_data.id_properties_ui(name)
-        pm.update(subtype=type,description='CABINET_BUILDER_PROP',items=combo_items)
+        obj = self.id_data
+
+        if type == 'CHECKBOX':
+            obj[name] = value
+            obj.id_properties_ensure()
+            pm = obj.id_properties_ui(name)
+            pm.update(description='CABINET_BUILDER_PROP')
+
+        if type == 'DISTANCE':
+            obj[name] = value
+            obj.id_properties_ensure()
+            pm = obj.id_properties_ui(name)
+            pm.update(subtype='DISTANCE',description='CABINET_BUILDER_PROP')
+
+        if type == 'COMBOBOX':
+            obj[name] = value
+            cb_list = []
+            for item in combo_items:
+                tup_item = (item,item,item)
+                cb_list.append(tup_item)
+            pm = obj.id_properties_ui(name)
+            pm.update(description='CABINET_BUILDER_PROP',items=cb_list)        
+
+    def driver(self,data_path,index,expression,variables=[]):
+        driver = self.id_data.driver_add(data_path,index)
+        self.add_driver_variables(driver,variables)
+        driver.driver.expression = expression
 
     def get_var(self,data_path,name):
         return Variable(self.id_data,data_path,name)

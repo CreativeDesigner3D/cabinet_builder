@@ -89,6 +89,9 @@ class GeoNodeMeshObject():
                 else:
                     layout.prop(self.mod,'["' + node_input.identifier + '"]',text=text,icon=icon)
 
+    def driver(self,data_path,index,expression,variables=[]):
+        self.obj.cabinet_builder.driver(data_path,index,expression,variables)
+
     def driver_input(self,name,expression="",variables=[]):
         input_identifier = ""
         if name in self.mod.node_group.interface.items_tree:

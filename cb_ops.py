@@ -261,29 +261,14 @@ class cabinet_builder_OT_add_property(bpy.types.Operator):
         obj = bpy.data.objects[self.obj_name]
         
         if self.property_type == 'CHECKBOX':
-            obj[self.property_name] = self.checkbox_value
-            obj.id_properties_ensure()
-            pm = obj.id_properties_ui(self.property_name)
-            pm.update(description='CABINET_BUILDER_PROP')
+            obj.cabinet_builder.add_property(self.property_name,self.property_type,self.checkbox_value)
 
         if self.property_type == 'DISTANCE':
-            obj[self.property_name] = self.distance_value
-            obj.id_properties_ensure()
-            pm = obj.id_properties_ui(self.property_name)
-            pm.update(subtype='DISTANCE',description='CABINET_BUILDER_PROP')
+            obj.cabinet_builder.add_property(self.property_name,self.property_type,self.distance_value)
 
         if self.property_type == 'COMBOBOX':
-            obj[self.property_name] = self.int_value
-            cb_list = []
-            tup_item_1 = ("Item 1","Item 1",'Item 1')
-            tup_item_2 = ("Item 2","Item 2",'Item 2')
-            tup_item_3 = ("Item 3","Item 3",'Item 3')
-            cb_list.append(tup_item_1)
-            cb_list.append(tup_item_2)
-            cb_list.append(tup_item_3)
-            pm = obj.id_properties_ui(self.property_name)
-            pm.update(description='CABINET_BUILDER_PROP',items=cb_list)
-            # pm.update(items=cb_list)
+            cb_list = ['Item 1','Item 2','Item 3']         
+            obj.cabinet_builder.add_property(self.property_name,self.property_type,self.int_value,combo_items=cb_list)
 
         #This seems to fix issue with property not evaluating in formulas with refresh
         obj.location = obj.location
