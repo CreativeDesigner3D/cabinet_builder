@@ -78,9 +78,25 @@ class Object_Cabinet_Builder(PropertyGroup):
 
     expand_object_info: BoolProperty(name="Expand Object Info",default=False)# type: ignore
 
+    def add_property(self,name,type,value,combo_items=[]):
+        self.id_data[name] = value
+        self.id_data.id_properties_ensure()
+        pm = self.id_data.id_properties_ui(name)
+        pm.update(subtype=type,description='CABINET_BUILDER_PROP',items=combo_items)
+
     def get_var(self,data_path,name):
         return Variable(self.id_data,data_path,name)
     
+    def get_input_var(self,input_name,name):
+        node = self.mod.node_group      
+        input_identifier = "" 
+        for input in node.interface.items_tree:
+            if input.name == input_name:
+                input_identifier = input.identifier
+                break        
+        data_path = 'modifiers["' + self.mod.name + '"]["' + input_identifier + '"]'
+        return self.obj.pyclone.get_var(data_path,name)
+
     def add_driver_variables(self,driver,variables):
         for var in variables:
             new_var = driver.driver.variables.new()
@@ -176,6 +192,16 @@ class Object_Cabinet_Builder(PropertyGroup):
             props.data_path = driver.data_path
             props.array_index = driver.array_index
             props.var_name = var.name
+
+    def driver_input(self,name,expression="",variables=[]):
+        input_identifier = ""
+        if name in self.mod.node_group.interface.items_tree:
+            node_input = self.mod.node_group.interface.items_tree[name]  
+            input_identifier = node_input.identifier
+        driver = self.obj.driver_add('modifiers["' + self.mod.name + '"]["' + input_identifier + '"]')
+        self.add_driver_variables(driver,variables)
+        # pc_utils.add_driver_variables(driver,variables)
+        driver.driver.expression = expression
 
     @classmethod
     def register(cls):

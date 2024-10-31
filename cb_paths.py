@@ -91,4 +91,10 @@ def get_active_object_library_path(context):
         return lib_path
     else:
         active_path = os.path.join(lib_path,scene_cb.active_object_library_category)
-        return active_path        
+        return active_path  
+
+def get_user_script_library_path():
+    path = os.path.join(os.path.dirname(__file__),'Cabinet_Builder_Test_Scripts')
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path          

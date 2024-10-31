@@ -1105,6 +1105,46 @@ class cabinet_builder_OT_assign_material_to_all_geo_node_inputs(bpy.types.Operat
         return {'FINISHED'}
 
 
+class cabinet_builder_OT_draw_class_from_script(bpy.types.Operator):
+    bl_idname = "cabinet_builder.draw_class_from_script"
+    bl_label = "Draw Class from Script"
+    bl_description = "This will draw a class from a script"
+    bl_options = {'UNDO'}
+    
+    #READONLY
+    script_path: bpy.props.StringProperty(name="Script Path")# type: ignore
+    
+    def execute(self,context):
+        import sys
+        import inspect
+        
+        script_folder = cb_paths.get_user_script_library_path()
+        sys.path.append(script_folder)
+        script_files = [f for f in os.listdir(script_folder) if f.endswith('.py')]
+        
+        # for mod in sys.modules:
+        #     print('MOD',mod)
+
+        for script_file in script_files:
+            print(f"\nClasses in {script_file}:")
+            
+            # Get full path to script
+            script_path = os.path.join(script_folder, script_file)
+            
+            # Get module name without .py extension
+            module_name = os.path.splitext(script_file)[0]
+            
+            # Import the module
+            module = __import__(module_name)
+            module_members = inspect.getmembers(module)
+            for name, obj in module_members:
+                if inspect.isclass(obj):
+                    ob = obj()
+                    if hasattr(ob,'draw'):
+                        ob.draw()                    
+                    print(f"- {name}")
+        return {'FINISHED'}
+
 classes = (
     cabinet_builder_OT_container_prompts,
     cabinet_builder_OT_add_cabinet_container,
@@ -1128,7 +1168,8 @@ classes = (
     cabinet_builder_OT_assign_material_to_geo_input,
     cabinet_builder_OT_assign_material_to_slot,
     cabinet_builder_OT_assign_material_to_all_slots,
-    cabinet_builder_OT_assign_material_to_all_geo_node_inputs
+    cabinet_builder_OT_assign_material_to_all_geo_node_inputs,
+    cabinet_builder_OT_draw_class_from_script
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)    

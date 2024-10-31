@@ -153,8 +153,10 @@ class GeoNodeMeshObject():
 
 class GeoNodeContainer(GeoNodeMeshObject):
     
+    geo_node_name = "GeoNodeContainer"
+
     def create(self,name="Container"):
-        class_name = self.__class__.__name__
+        class_name = self.geo_node_name
         path = os.path.join(GEO_NODE_PATH,class_name + ".blend")
         self.get_geo_node(path,class_name)
         self.obj['IS_GeoNodeContainer'] = True

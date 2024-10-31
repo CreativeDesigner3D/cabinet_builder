@@ -139,6 +139,27 @@ class CABINET_BUILDER_PT_cabinet_objects(bpy.types.Panel):
         )        
 
 
+class CABINET_BUILDER_PT_cabinet_scripts(bpy.types.Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_label = "Cabinet Scripts"
+    bl_category = "Cabinets"    
+    # bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        cb_scene = context.scene.cabinet_builder
+
+        layout = self.layout
+
+        script_path = cb_paths.get_user_script_library_path()
+        script_files = os.listdir(script_path)
+        for script_file in script_files:
+            file_name, file_ext = os.path.splitext(script_file)
+            if file_ext == '.py':
+                script_path = os.path.join(script_path,script_file)
+                layout.operator('cabinet_builder.draw_class_from_script',text=file_name).script_path = script_path
+
+
 class CABINET_BUILDER_MT_library_categories(bpy.types.Menu):
     bl_label = "Custom User Library Categories"
 
@@ -175,6 +196,7 @@ classes = (
     CABINET_BUILDER_PT_cabinet_library,
     CABINET_BUILDER_PT_cabinet_materials,
     CABINET_BUILDER_PT_cabinet_objects,
+    CABINET_BUILDER_PT_cabinet_scripts,
     CABINET_BUILDER_MT_library_categories,
     CABINET_BUILDER_MT_add_cabinet_part_modifier
 )
