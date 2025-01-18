@@ -806,7 +806,7 @@ class cabinet_builder_OT_add_cabinet_part_modifier(bpy.types.Operator):
         layout.prop(self,'modifier_name')
 
     def execute(self, context):
-        pb = cb_utils.get_particle_board_material()
+        pb = cb_utils.get_unfinished_material(context)
 
         obj = context.object
         cpm = cb_types.CabinetPartModifier(obj)
@@ -1090,6 +1090,28 @@ class cabinet_builder_OT_assign_material_to_all_geo_node_inputs(bpy.types.Operat
         return {'FINISHED'}
 
 
+class cabinet_builder_OT_assign_cabinet_materials(bpy.types.Operator):
+    bl_idname = "cabinet_builder.assign_cabinet_materials"
+    bl_label = "Assign Cabinet Materials"
+    bl_description = "Assign Cabinet Materials"
+
+    temp_prop: bpy.props.StringProperty(name="Temp Property")# type: ignore
+
+    # def invoke(self,context,event):
+    #     wm = context.window_manager
+    #     return wm.invoke_props_dialog(self, width=500)
+
+    def execute(self, context):  
+        for obj in context.scene.objects:
+            if 'IS_GeoNodeCabinetPart' in obj:
+                part = cb_types.GeoNodeCabinetPart(obj)
+                part.update_material_properties(context)
+        return {'FINISHED'}
+
+    # def draw(self, context):
+    #     layout = self.layout
+
+
 class cabinet_builder_OT_draw_class_from_script(bpy.types.Operator):
     bl_idname = "cabinet_builder.draw_class_from_script"
     bl_label = "Draw Class from Script"
@@ -1115,19 +1137,22 @@ class cabinet_builder_OT_draw_class_from_script(bpy.types.Operator):
             
             # Get full path to script
             script_path = os.path.join(script_folder, script_file)
+            print(script_path,self.script_path)
             
-            # Get module name without .py extension
-            module_name = os.path.splitext(script_file)[0]
-            
-            # Import the module
-            module = __import__(module_name)
-            module_members = inspect.getmembers(module)
-            for name, obj in module_members:
-                if inspect.isclass(obj):
-                    ob = obj()
-                    if hasattr(ob,'draw'):
-                        ob.draw()                    
-                    print(f"- {name}")
+            if self.script_path == script_path:
+
+                # Get module name without .py extension
+                module_name = os.path.splitext(script_file)[0]
+                
+                # Import the module
+                module = __import__(module_name)
+                module_members = inspect.getmembers(module)
+                for name, obj in module_members:
+                    if inspect.isclass(obj):
+                        ob = obj()
+                        if hasattr(ob,'draw'):
+                            ob.draw()                    
+                        print(f"- {name}")
         return {'FINISHED'}
 
 classes = (
@@ -1154,6 +1179,7 @@ classes = (
     cabinet_builder_OT_assign_material_to_slot,
     cabinet_builder_OT_assign_material_to_all_slots,
     cabinet_builder_OT_assign_material_to_all_geo_node_inputs,
+    cabinet_builder_OT_assign_cabinet_materials,
     cabinet_builder_OT_draw_class_from_script
 )
 

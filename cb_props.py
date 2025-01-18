@@ -55,12 +55,14 @@ class Scene_Cabinet_Builder(PropertyGroup):
 
     finished_surface_material: PointerProperty(name="Finish Surface Material",type=bpy.types.Material)# type: ignore
     unfinished_surface_material: PointerProperty(name="Finish Surface Material",type=bpy.types.Material)# type: ignore
-    semi_finished_surface_material: PointerProperty(name="Semi Finish Surface Material",type=bpy.types.Material)# type: ignore
+    semi_exposed_surface_material: PointerProperty(name="Semi Exposed Surface Material",type=bpy.types.Material)# type: ignore
+    front_surface_material: PointerProperty(name="Front Surface Material",type=bpy.types.Material)# type: ignore
 
     finished_edge_material: PointerProperty(name="Finish Edge Material",type=bpy.types.Material)# type: ignore
     unfinished_edge_material: PointerProperty(name="Finish Edge Material",type=bpy.types.Material)# type: ignore
-    semi_finished_edge_material: PointerProperty(name="Semi Finish Edge Material",type=bpy.types.Material)# type: ignore
-    
+    semi_exposed_edge_material: PointerProperty(name="Semi Exposed Edge Material",type=bpy.types.Material)# type: ignore
+    front_edge_material: PointerProperty(name="Front Edge Material",type=bpy.types.Material)# type: ignore
+
     @classmethod
     def register(cls):
         bpy.types.Scene.cabinet_builder = PointerProperty(
@@ -92,6 +94,18 @@ class Object_Cabinet_Builder(PropertyGroup):
             obj.id_properties_ensure()
             pm = obj.id_properties_ui(name)
             pm.update(subtype='DISTANCE',description='CABINET_BUILDER_PROP')
+
+        if type == 'ANGLE':
+            obj[name] = value
+            obj.id_properties_ensure()
+            pm = obj.id_properties_ui(name)
+            pm.update(subtype='ANGLE',description='CABINET_BUILDER_PROP')
+
+        if type == 'PERCENTAGE':
+            obj[name] = value
+            obj.id_properties_ensure()
+            pm = obj.id_properties_ui(name)
+            pm.update(subtype='PERCENTAGE',min=0,max=100,description='CABINET_BUILDER_PROP')
 
         if type == 'COMBOBOX':
             obj[name] = value

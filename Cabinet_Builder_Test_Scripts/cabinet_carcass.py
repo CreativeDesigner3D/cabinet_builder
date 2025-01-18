@@ -3,6 +3,7 @@ import math
 from cabinet_builder import cb_unit
 from cabinet_builder import cb_types
 
+
 class CabinetCarcass(cb_types.GeoNodeContainer):
     
     def draw(self):
@@ -12,11 +13,12 @@ class CabinetCarcass(cb_types.GeoNodeContainer):
         self.set_input("Dim Y",cb_unit.inch(23))
         self.set_input("Dim Z",cb_unit.inch(34))
 
-        self.obj.cabinet_builder.add_property("Material Thickness","DISTANCE",cb_unit.inch(.75))
-        self.obj.cabinet_builder.add_property("Toe Kick Height","DISTANCE",cb_unit.inch(4))
+        cb_obj = self.obj.cabinet_builder
+        cb_obj.add_property("Material Thickness","DISTANCE",cb_unit.inch(.75))
+        cb_obj.add_property("Toe Kick Height","DISTANCE",cb_unit.inch(4))
 
-        mt = self.obj.cabinet_builder.get_var('["Material Thickness"]','mt')
-        tkh = self.obj.cabinet_builder.get_var('["Toe Kick Height"]','tkh')
+        mt = cb_obj.get_var('["Material Thickness"]','mt')
+        tkh = cb_obj.get_var('["Toe Kick Height"]','tkh')
         x = self.get_var_input('Dim X','x')
         z = self.get_var_input('Dim Z','z')
         y = self.get_var_input('Dim Y','y')
@@ -30,6 +32,9 @@ class CabinetCarcass(cb_types.GeoNodeContainer):
         left_side.driver_input('Thickness','mt',[mt])
         left_side.set_input('Mirror Y',True)
         left_side.set_input('Mirror Z',True)
+        left_side.obj['Edge L2 Finish'] = 1
+        left_side.obj['Top Finish'] = 2
+        left_side.obj['Bottom Finish'] = 1
 
         tk_notch = cb_types.CabinetPartModifier(left_side.obj)
         tk_notch.add_node('CPM_CORNERNOTCH','Toe Kick Notch')
@@ -38,7 +43,6 @@ class CabinetCarcass(cb_types.GeoNodeContainer):
         tk_notch.set_input('Y',cb_unit.inch(3))
         tk_notch.set_input('Route Depth',cb_unit.inch(.76))
         tk_notch.set_input('Flip Y',True)
-        # tk_notch.set_input('Material',pb) 
 
         right_side = cb_types.GeoNodeCabinetPart()
         right_side.create("Right Side")
@@ -50,6 +54,9 @@ class CabinetCarcass(cb_types.GeoNodeContainer):
         right_side.driver_input('Thickness','mt',[mt])
         right_side.set_input('Mirror Y',True)
         right_side.set_input('Mirror Z',False)
+        right_side.obj['Edge L2 Finish'] = 1
+        right_side.obj['Top Finish'] = 2
+        right_side.obj['Bottom Finish'] = 1
 
         bottom = cb_types.GeoNodeCabinetPart()
         bottom.create("Bottom")
@@ -62,6 +69,9 @@ class CabinetCarcass(cb_types.GeoNodeContainer):
         bottom.driver_input('Thickness','mt',[mt])
         bottom.set_input('Mirror Y',True)
         bottom.set_input('Mirror Z',False)
+        bottom.obj['Edge L2 Finish'] = 1
+        bottom.obj['Top Finish'] = 2
+        bottom.obj['Bottom Finish'] = 1
 
         top = cb_types.GeoNodeCabinetPart()
         top.create("Top")
@@ -74,6 +84,9 @@ class CabinetCarcass(cb_types.GeoNodeContainer):
         top.driver_input('Thickness','mt',[mt])
         top.set_input('Mirror Y',True)
         top.set_input('Mirror Z',True)
+        top.obj['Edge L2 Finish'] = 1
+        top.obj['Top Finish'] = 2
+        top.obj['Bottom Finish'] = 1
 
         back = cb_types.GeoNodeCabinetPart()
         back.create("Back")
@@ -85,4 +98,8 @@ class CabinetCarcass(cb_types.GeoNodeContainer):
         back.driver_input('Width','x-mt*2',[x,mt])
         back.driver_input('Thickness','mt',[mt])
         back.set_input('Mirror Y',True)
-        back.set_input('Mirror Z',False)        
+        back.set_input('Mirror Z',False)
+        back.obj['Top Finish'] = 2
+        back.obj['Bottom Finish'] = 1        
+
+        

@@ -313,14 +313,81 @@ class GeoNodeCabinetPart(GeoNodeMeshObject):
         self.obj.name = name       
         self.obj.color = (1,1,1,1)
         bpy.context.view_layer.active_layer_collection.collection.objects.link(self.obj)
-        pb = cb_utils.get_particle_board_material()
+        pb = cb_utils.get_unfinished_material(bpy.context)
         self.set_input('Top Surface',pb)
         self.set_input('Bottom Surface',pb)
         self.set_input('Edge W1',pb)
         self.set_input('Edge W2',pb)
         self.set_input('Edge L1',pb)
         self.set_input('Edge L2',pb)
+        cb_list = ['Unfinished','Finished','Semi Exposed','Front']         
+        self.obj.cabinet_builder.add_property('Top Finish','COMBOBOX',0,combo_items=cb_list)     
+        self.obj.cabinet_builder.add_property('Bottom Finish','COMBOBOX',0,combo_items=cb_list)
+        self.obj.cabinet_builder.add_property('Edge W1 Finish','COMBOBOX',0,combo_items=cb_list)
+        self.obj.cabinet_builder.add_property('Edge W2 Finish','COMBOBOX',0,combo_items=cb_list)
+        self.obj.cabinet_builder.add_property('Edge L1 Finish','COMBOBOX',0,combo_items=cb_list)
+        self.obj.cabinet_builder.add_property('Edge L2 Finish','COMBOBOX',0,combo_items=cb_list)           
     
+    def update_material_properties(self,context):
+        unfinished_surface = cb_utils.get_unfinished_material(context)
+        finished_surface = cb_utils.get_finished_material(context)
+        semi_exposed_surface = cb_utils.get_semi_exposed_material(context)
+        front_surface = cb_utils.get_front_material(context)        
+        unfinished_edge = cb_utils.get_unfinished_material(context)
+        finished_edge = cb_utils.get_finished_edge_material(context)
+        semi_exposed_edge = cb_utils.get_semi_exposed_material(context)
+        front_edge = cb_utils.get_front_material(context)
+
+        if self.obj['Top Finish'] == 0:
+            self.set_input('Top Surface',unfinished_surface)
+        if self.obj['Top Finish'] == 1:
+            self.set_input('Top Surface',finished_surface)
+        if self.obj['Top Finish'] == 2:
+            self.set_input('Top Surface',semi_exposed_surface)
+        if self.obj['Top Finish'] == 3:
+            self.set_input('Top Surface',front_surface)
+        if self.obj['Bottom Finish'] == 0:
+            self.set_input('Bottom Surface',unfinished_surface)
+        if self.obj['Bottom Finish'] == 1:
+            self.set_input('Bottom Surface',finished_surface)
+        if self.obj['Bottom Finish'] == 2:
+            self.set_input('Bottom Surface',semi_exposed_surface)
+        if self.obj['Bottom Finish'] == 3:
+            self.set_input('Bottom Surface',front_surface)
+        if self.obj['Edge W1 Finish'] == 0:
+            self.set_input('Edge W1',unfinished_edge)
+        if self.obj['Edge W1 Finish'] == 1:
+            self.set_input('Edge W1',finished_edge)
+        if self.obj['Edge W1 Finish'] == 2:
+            self.set_input('Edge W1',semi_exposed_edge)
+        if self.obj['Edge W1 Finish'] == 3:
+            self.set_input('Edge W1',front_edge)
+        if self.obj['Edge W2 Finish'] == 0:
+            self.set_input('Edge W2',unfinished_edge)
+        if self.obj['Edge W2 Finish'] == 1:
+            self.set_input('Edge W2',finished_edge)
+        if self.obj['Edge W2 Finish'] == 2:
+            self.set_input('Edge W2',semi_exposed_edge)
+        if self.obj['Edge W2 Finish'] == 3:
+            self.set_input('Edge W2',front_edge)
+        if self.obj['Edge L1 Finish'] == 0:
+            self.set_input('Edge L1',unfinished_edge)
+        if self.obj['Edge L1 Finish'] == 1:
+            self.set_input('Edge L1',finished_edge)
+        if self.obj['Edge L1 Finish'] == 2:
+            self.set_input('Edge L1',semi_exposed_edge)
+        if self.obj['Edge L1 Finish'] == 3:
+            self.set_input('Edge L1',front_edge)
+        if self.obj['Edge L2 Finish'] == 0:
+            self.set_input('Edge L2',unfinished_edge)
+        if self.obj['Edge L2 Finish'] == 1:
+            self.set_input('Edge L2',finished_edge)
+        if self.obj['Edge L2 Finish'] == 2:
+            self.set_input('Edge L2',semi_exposed_edge)
+        if self.obj['Edge L2 Finish'] == 3:
+            self.set_input('Edge L2',front_edge)
+
+
     def draw_ui(self,layout,context):
         scene_cb = context.scene.cabinet_builder
 
@@ -333,8 +400,6 @@ class GeoNodeCabinetPart(GeoNodeMeshObject):
         row.prop(scene_cb,'selected_object_tabs',expand=True)
 
         if scene_cb.selected_object_tabs == 'MAIN':
-            # row.label(text="",icon='BLANK1')
-                    
             col = box.column(align=True)
             row = col.row(align=True)
             self.draw_input(row,'Length',text="Length")

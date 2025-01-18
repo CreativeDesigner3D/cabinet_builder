@@ -50,28 +50,61 @@ class CABINET_BUILDER_PT_cabinet_materials(bpy.types.Panel):
     # bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
-        cb_scene = context.scene.cabinet_builder
-
         layout = self.layout
-        layout.prop(cb_scene,'finished_surface_material')
 
         workspace = context.workspace
-        wm = context.window_manager 
-        workspace.asset_library_reference = 'cabinet_builder_material_library'
-        activate_op_props, drag_op_props = layout.template_asset_view(
-            'cabinet_builder_material_library',
-            workspace,
-            "asset_library_reference",
-            wm.cabinet_builder,
-            "cabinet_builder_material_assets",
-            wm.cabinet_builder,
-            'cabinet_builder_material_index',
-            # filter_id_types={"filter_object"},
-            display_options={'NO_LIBRARY'},
-            # display_options={'NO_FILTER','NO_LIBRARY'},
-            activate_operator='cabinet_builder.click_library_item',
-            drag_operator='cabinet_builder.drop_material',            
-        )        
+        cb_scene = context.scene.cabinet_builder
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="Cabinet Materials")
+        row.operator('cabinet_builder.assign_cabinet_materials',text="Update")
+        
+        col = box.column(align=True)
+        row = col.row()
+        row.label(text=" ")
+        row.label(text="Surface")
+        row.label(text="Edge")
+        row = col.row(align=True)
+        row.label(text="Finish")
+        row.prop(cb_scene,'finished_surface_material',text="")
+        row.prop(cb_scene,'finished_edge_material',text="")  
+        row = col.row(align=True)
+        row.label(text="Semi Exposed")
+        row.prop(cb_scene,'semi_exposed_surface_material',text="")
+        row.prop(cb_scene,'semi_exposed_edge_material',text="")
+        row = col.row(align=True)
+        row.label(text="Fronts")
+        row.prop(cb_scene,'front_surface_material',text="")
+        row.prop(cb_scene,'front_edge_material',text="")
+        row = col.row(align=True)
+        row.label(text="Unfinished")
+        row.prop(cb_scene,'unfinished_surface_material',text="")
+        row.prop(cb_scene,'unfinished_edge_material',text="")
+
+        # row = col.row()
+        # row.label(text="Door Edgebanding")
+        # row.prop(self,'door_edgebanding',text="")
+
+        # layout.prop(cb_scene,'finished_surface_material')
+
+        if 'cabinet_builder_material_library' in workspace.asset_library_reference:
+            wm = context.window_manager 
+            workspace.asset_library_reference = 'cabinet_builder_material_library'
+            activate_op_props, drag_op_props = layout.template_asset_view(
+                'cabinet_builder_material_library',
+                workspace,
+                "asset_library_reference",
+                wm.cabinet_builder,
+                "cabinet_builder_material_assets",
+                wm.cabinet_builder,
+                'cabinet_builder_material_index',
+                # filter_id_types={"filter_object"},
+                display_options={'NO_LIBRARY'},
+                # display_options={'NO_FILTER','NO_LIBRARY'},
+                activate_operator='cabinet_builder.click_library_item',
+                drag_operator='cabinet_builder.drop_material',            
+            )        
 
 
 class CABINET_BUILDER_PT_cabinet_library(bpy.types.Panel):
@@ -156,8 +189,8 @@ class CABINET_BUILDER_PT_cabinet_scripts(bpy.types.Panel):
         for script_file in script_files:
             file_name, file_ext = os.path.splitext(script_file)
             if file_ext == '.py':
-                script_path = os.path.join(script_path,script_file)
-                layout.operator('cabinet_builder.draw_class_from_script',text=file_name).script_path = script_path
+                file_path = os.path.join(script_path,script_file)
+                layout.operator('cabinet_builder.draw_class_from_script',text=file_name).script_path = file_path
 
 
 class CABINET_BUILDER_MT_library_categories(bpy.types.Menu):
