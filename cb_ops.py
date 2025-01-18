@@ -2,6 +2,8 @@ import bpy
 import os
 import subprocess
 import codecs
+import sys
+import inspect
 from mathutils import Vector
 from . import cb_types, cb_unit, cb_paths, cb_snap, cb_utils
 from rna_prop_ui import rna_idprop_quote_path
@@ -1111,6 +1113,9 @@ class cabinet_builder_OT_assign_cabinet_materials(bpy.types.Operator):
     # def draw(self, context):
     #     layout = self.layout
 
+class Module_Class(bpy.types.PropertyGroup):
+    module_name: bpy.props.StringProperty(name="Module Name")# type: ignore
+    is_selected: bpy.props.BoolProperty(name="Is Selected")# type: ignore
 
 class cabinet_builder_OT_draw_class_from_script(bpy.types.Operator):
     bl_idname = "cabinet_builder.draw_class_from_script"
@@ -1121,17 +1126,16 @@ class cabinet_builder_OT_draw_class_from_script(bpy.types.Operator):
     #READONLY
     script_path: bpy.props.StringProperty(name="Script Path")# type: ignore
     
-    def execute(self,context):
-        import sys
-        import inspect
-        
+    classes: bpy.props.CollectionProperty(type=Module_Class)# type: ignore
+
+    def invoke(self,context,event):
+        for c in self.classes:
+            self.classes.remove(0)
+
         script_folder = cb_paths.get_user_script_library_path()
         sys.path.append(script_folder)
         script_files = [f for f in os.listdir(script_folder) if f.endswith('.py')]
         
-        # for mod in sys.modules:
-        #     print('MOD',mod)
-
         for script_file in script_files:
             print(f"\nClasses in {script_file}:")
             
@@ -1150,9 +1154,32 @@ class cabinet_builder_OT_draw_class_from_script(bpy.types.Operator):
                 for name, obj in module_members:
                     if inspect.isclass(obj):
                         ob = obj()
-                        if hasattr(ob,'draw'):
-                            ob.draw()                    
-                        print(f"- {name}")
+                        if hasattr(ob,'LIBRARY_ITEM_NAME') and hasattr(ob,'draw'):
+                            module_class = self.classes.add()
+                            module_class.module_name = module_name
+                            module_class.name = name                  
+                        print(f"- {name}")        
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=200)
+    
+    def draw(self, context):
+        layout = self.layout
+        for c in self.classes:
+            layout.prop(c,'is_selected',text=c.name)
+
+    def execute(self,context):
+        current_x = 0
+        spacing = cb_unit.inch(12)
+        for c in self.classes:
+            if c.is_selected:
+                module = __import__(c.module_name)
+                module_members = inspect.getmembers(module)
+                for name, obj in module_members:
+                    if name == c.name:
+                        item = obj()
+                        item.draw()
+                        item.obj.location.x = current_x
+                        current_x += spacing + item.get_input("Dim X")
         return {'FINISHED'}
 
 classes = (
@@ -1180,6 +1207,7 @@ classes = (
     cabinet_builder_OT_assign_material_to_all_slots,
     cabinet_builder_OT_assign_material_to_all_geo_node_inputs,
     cabinet_builder_OT_assign_cabinet_materials,
+    Module_Class,
     cabinet_builder_OT_draw_class_from_script
 )
 
