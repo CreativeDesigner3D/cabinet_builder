@@ -1252,6 +1252,66 @@ class cabinet_builder_OT_delete_script_path(bpy.types.Operator):
         return {'CANCELLED'}
 
 
+class cabinet_builder_OT_set_recommended_settings(bpy.types.Operator):
+    bl_idname = "cabinet_builder.set_recommended_settings"
+    bl_label = "Set Recommended Settings"
+    bl_description = "This will set the recommended settings"
+    bl_options = {'UNDO'}
+    
+    #READONLY
+    turn_off_relationship_lines: bpy.props.BoolProperty(name="Turn Off Relationship Lines",
+                                                        description="This setting culters the interface with unneeded relationship lines",
+                                                        default=True)# type: ignore
+
+    turn_on_object_color_type: bpy.props.BoolProperty(name="Turn On Object Color Type",
+                                                        description="This setting turns on the object color type",
+                                                        default=True)# type: ignore
+    
+    turn_off_3d_cursor: bpy.props.BoolProperty(name="Turn Off 3D Cursor",
+                                                        description="This setting turns off the 3D cursor",
+                                                        default=True)# type: ignore
+
+    show_wireframes: bpy.props.BoolProperty(name="Show Wireframes",
+                                                        description="This setting shows the wireframes",
+                                                        default=True)# type: ignore
+    
+    space_data = None
+    def execute(self,context):
+      
+        view = context.space_data
+        overlay = view.overlay
+        shading = view.shading        
+        if self.turn_off_relationship_lines:
+            overlay.show_relationship_lines = False
+        if self.turn_on_object_color_type:
+            shading.color_type = 'OBJECT'
+        if self.turn_off_3d_cursor:
+            overlay.show_cursor = False
+        if self.show_wireframes:
+            overlay.show_wireframes = True
+            overlay.wireframe_threshold = 0.0
+            overlay.wireframe_opacity = 0.8
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        for area in context.screen.areas:
+            if area.type == 'VIEW_3D':
+                for region in area.regions:
+                    if region.data:
+                        self.space_data = region.data
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=350)
+        
+    def draw(self,context):
+        layout = self.layout
+        box = layout.box()
+        box.label(text="These are the recommended Home Builder settings.")
+        box.prop(self,'turn_off_relationship_lines')
+        box.prop(self,'turn_on_object_color_type')
+        box.prop(self,'turn_off_3d_cursor')
+        box.prop(self,'show_wireframes')
+
+
 classes = (
     cabinet_builder_OT_update_child_data,
     cabinet_builder_OT_container_prompts,
@@ -1283,6 +1343,7 @@ classes = (
     cabinet_builder_OT_add_external_script_path,
     cabinet_builder_OT_set_active_script_path,
     cabinet_builder_OT_delete_script_path,
+    cabinet_builder_OT_set_recommended_settings,
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)    

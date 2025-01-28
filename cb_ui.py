@@ -24,6 +24,7 @@ class CABINET_BUILDER_PT_cabinet_builder(bpy.types.Panel):
         col = layout.column(align=True)
 
         box = col.box()
+        box.operator('cabinet_builder.set_recommended_settings')
         row = box.row()
         row.label(text="Add:",icon='ADD')
         row.operator('cabinet_builder.add_cabinet_container',text="Container")
