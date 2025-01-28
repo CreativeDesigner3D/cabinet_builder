@@ -183,6 +183,9 @@ class GeoNodeContainer(GeoNodeMeshObject):
         box = layout.box()
         row = box.row()
         row.label(text="Active Container: " + self.obj.name)
+        #This is used to fix a bug in Blender where the child data is not updated when a property is changed
+        #A bug has been reported here https://projects.blender.org/blender/blender/issues/133392
+        row.operator('cabinet_builder.update_child_data',text="",icon='FILE_REFRESH').search_obj_name = self.obj.name
         row = box.row()
         row.prop(scene_cb,'selected_tabs',expand=True)
         

@@ -26,6 +26,27 @@ class cabinet_builder_OT_temp_operator(bpy.types.Operator):
         layout = self.layout
 
 
+#This is used to fix a bug in Blender where the child data is not updated when a property is changed
+#A bug has been reported here https://projects.blender.org/blender/blender/issues/133392
+class cabinet_builder_OT_update_child_data(bpy.types.Operator):
+    bl_idname = "cabinet_builder.update_child_data"
+    bl_label = "Update Child Data"
+    bl_description = "This needed to bypass a bug in Blender where the child data is not updated. BUG REPORT: 133392"
+
+    search_obj_name: bpy.props.StringProperty(name="Search Object Name")# type: ignore
+
+    def execute(self, context):  
+        if self.search_obj_name in bpy.data.objects:
+            obj = bpy.data.objects[self.search_obj_name]
+            search_objs = obj.children_recursive
+        else:
+            search_objs = context.scene.objects
+
+        for obj in search_objs:
+            obj.location = obj.location
+        return {'FINISHED'}
+    
+
 class cabinet_builder_OT_container_prompts(bpy.types.Operator):
     bl_idname = "cabinet_builder.container_prompts"
     bl_label = "Container Prompts"
@@ -1183,6 +1204,7 @@ class cabinet_builder_OT_draw_class_from_script(bpy.types.Operator):
         return {'FINISHED'}
 
 classes = (
+    cabinet_builder_OT_update_child_data,
     cabinet_builder_OT_container_prompts,
     cabinet_builder_OT_add_cabinet_container,
     cabinet_builder_OT_add_cabinet_part,
