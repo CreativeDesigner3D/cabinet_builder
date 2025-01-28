@@ -12,8 +12,10 @@ class Cabinet_Base_1_Door(cabinet_carcass.CabinetCarcass):
     def draw(self):
         self.use_stretchers = True
         self.create_carcass(self.LIBRARY_ITEM_NAME)
-        self.add_doors()
-        bpy.ops.cabinet_builder.assign_cabinet_materials()        
+        door = cabinet_door.CabinetDoor()
+        self.add_insert(door)
+        bpy.ops.cabinet_builder.assign_cabinet_materials(search_obj_name=self.obj.name)        
+
 
 class Cabinet_Tall_1_Door(cabinet_carcass.CabinetCarcass):
     LIBRARY_ITEM_NAME = "Tall 1 Door"
@@ -23,4 +25,4 @@ class Cabinet_Tall_1_Door(cabinet_carcass.CabinetCarcass):
         self.use_stretchers = False
         self.create_carcass(self.LIBRARY_ITEM_NAME)
         self.add_doors()
-        bpy.ops.cabinet_builder.assign_cabinet_materials()    
+        bpy.ops.cabinet_builder.assign_cabinet_materials(search_obj_name=self.obj.name)    

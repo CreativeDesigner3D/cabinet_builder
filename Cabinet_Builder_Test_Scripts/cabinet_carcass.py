@@ -203,4 +203,18 @@ class CabinetCarcass(cb_types.GeoNodeContainer):
         l_door.obj['Top Finish'] = 3
         l_door.obj['Bottom Finish'] = 3
 
-        
+    def add_insert(self,insert):
+        x = self.get_var_input('Dim X','x')
+        z = self.get_var_input('Dim Z','z')
+        y = self.get_var_input('Dim Y','y')  
+        mt = self.get_var_prop('Material Thickness','mt')
+        tkh = self.get_var_prop('Toe Kick Height','tkh')        
+
+        insert.draw()
+        insert.obj.parent = self.obj
+        insert.driver('location',0,'mt',[mt])
+        insert.driver('location',1,'-y',[y])
+        insert.driver('location',2,'tkh+mt',[tkh,mt])
+        insert.driver_input('Dim X','x-mt*2',[x,mt])
+        insert.driver_input('Dim Y','y',[y])
+        insert.driver_input('Dim Z','z-tkh-mt*2',[z,tkh,mt])

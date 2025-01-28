@@ -1097,21 +1097,21 @@ class cabinet_builder_OT_assign_cabinet_materials(bpy.types.Operator):
     bl_label = "Assign Cabinet Materials"
     bl_description = "Assign Cabinet Materials"
 
-    temp_prop: bpy.props.StringProperty(name="Temp Property")# type: ignore
-
-    # def invoke(self,context,event):
-    #     wm = context.window_manager
-    #     return wm.invoke_props_dialog(self, width=500)
+    search_obj_name: bpy.props.StringProperty(name="Search Object Name")# type: ignore
 
     def execute(self, context):  
-        for obj in context.scene.objects:
+        if self.search_obj_name in bpy.data.objects:
+            obj = bpy.data.objects[self.search_obj_name]
+            search_objs = obj.children_recursive
+        else:
+            search_objs = context.scene.objects
+
+        for obj in search_objs:
             if 'IS_GeoNodeCabinetPart' in obj:
                 part = cb_types.GeoNodeCabinetPart(obj)
                 part.update_material_properties(context)
         return {'FINISHED'}
 
-    # def draw(self, context):
-    #     layout = self.layout
 
 class Module_Class(bpy.types.PropertyGroup):
     module_name: bpy.props.StringProperty(name="Module Name")# type: ignore
