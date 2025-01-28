@@ -1,4 +1,5 @@
 import bpy
+import os
 from bpy.types import PropertyGroup
 from bpy.props import (
         BoolProperty,
@@ -49,6 +50,8 @@ class Scene_Cabinet_Builder(PropertyGroup):
     
     variable_object: PointerProperty(name="Variable Object",type=bpy.types.Object)# type: ignore
 
+    active_script_library_name: StringProperty(name="Active Script Library Name")# type: ignore
+    
     active_library_category: StringProperty(name="Active Library Category")# type: ignore
     active_material_library_category: StringProperty(name="Active Material Library Category")# type: ignore
     active_object_library_category: StringProperty(name="Active Object Library Category")# type: ignore
@@ -252,7 +255,13 @@ class Object_Cabinet_Builder(PropertyGroup):
     def unregister(cls):
         del bpy.types.Object.home_builder   
 
+class Script_Library(PropertyGroup):
+    library_path: StringProperty(name="Library Path")# type: ignore
+    namespace: StringProperty(name="Namespace")# type: ignore
+
 class Window_Manager_Cabinet_Builder(PropertyGroup):
+
+    script_libraries: CollectionProperty(type=Script_Library)# type: ignore
 
     cabinet_builder_library_index: IntProperty(name="Cabinet Builder Index",description="",default=0)# type: ignore
     cabinet_builder_library_assets: bpy.props.CollectionProperty(
@@ -269,6 +278,11 @@ class Window_Manager_Cabinet_Builder(PropertyGroup):
         type=bpy.types.AssetHandle,
         description="Current Set of Object Assets")# type: ignore  
     
+    def get_user_preferences(self,context):
+        preferences = context.preferences
+        add_on_prefs = preferences.addons[os.path.basename(os.path.dirname(__file__))].preferences
+        return add_on_prefs
+
     @classmethod
     def register(cls):
         bpy.types.WindowManager.cabinet_builder = PointerProperty(
@@ -284,6 +298,7 @@ class Window_Manager_Cabinet_Builder(PropertyGroup):
 classes = (
     Scene_Cabinet_Builder,
     Object_Cabinet_Builder,
+    Script_Library,
     Window_Manager_Cabinet_Builder,
 )
 

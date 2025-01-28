@@ -181,16 +181,20 @@ class CABINET_BUILDER_PT_cabinet_scripts(bpy.types.Panel):
 
     def draw(self, context):
         cb_scene = context.scene.cabinet_builder
-
+        cb_wm = context.window_manager.cabinet_builder
+        add_on_prefs = cb_wm.get_user_preferences(context)
         layout = self.layout
 
-        script_path = cb_paths.get_user_script_library_path()
-        script_files = os.listdir(script_path)
-        for script_file in script_files:
-            file_name, file_ext = os.path.splitext(script_file)
-            if file_ext == '.py':
-                file_path = os.path.join(script_path,script_file)
-                layout.operator('cabinet_builder.draw_class_from_script',text=file_name).script_path = file_path
+        row = layout.row()
+        row.scale_y = 1.3
+        row.menu('CABINET_BUILDER_MT_script_library_categories',text=cb_scene.active_script_library_name)
+        for script_library in cb_wm.script_libraries:
+            if script_library.name == cb_scene.active_script_library_name:
+                if hasattr(context.scene,script_library.namespace):
+                    props = eval("context.scene." + script_library.namespace)
+                    props.draw_ui(layout,context)
+                else:
+                    layout.label(text=script_library.namespace + " not found in scene.")
 
 
 class CABINET_BUILDER_MT_library_categories(bpy.types.Menu):
@@ -223,6 +227,17 @@ class CABINET_BUILDER_MT_add_cabinet_part_modifier(bpy.types.Menu):
             if ext == '.blend':
                 layout.operator('cabinet_builder.add_cabinet_part_modifier',text=filename).modifier_type = filename
 
+
+class CABINET_BUILDER_MT_script_library_categories(bpy.types.Menu):
+    bl_label = "Script Libraries"
+
+    def draw(self, context):
+        layout = self.layout
+        cb_wm = context.window_manager.cabinet_builder
+        for script_library in cb_wm.script_libraries:
+            layout.operator('cabinet_builder.set_active_script_path',text=script_library.name).name = script_library.name
+
+
 classes = (
     CABINET_BUILDER_MT_temp_menu,
     CABINET_BUILDER_PT_cabinet_builder,
@@ -231,7 +246,8 @@ classes = (
     CABINET_BUILDER_PT_cabinet_objects,
     CABINET_BUILDER_PT_cabinet_scripts,
     CABINET_BUILDER_MT_library_categories,
-    CABINET_BUILDER_MT_add_cabinet_part_modifier
+    CABINET_BUILDER_MT_add_cabinet_part_modifier,
+    CABINET_BUILDER_MT_script_library_categories
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)     

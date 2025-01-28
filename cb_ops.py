@@ -1153,7 +1153,8 @@ class cabinet_builder_OT_draw_class_from_script(bpy.types.Operator):
         for c in self.classes:
             self.classes.remove(0)
 
-        script_folder = cb_paths.get_user_script_library_path()
+        # script_folder = cb_paths.get_user_script_library_path()
+        script_folder = os.path.dirname(self.script_path)
         sys.path.append(script_folder)
         script_files = [f for f in os.listdir(script_folder) if f.endswith('.py')]
         
@@ -1203,6 +1204,54 @@ class cabinet_builder_OT_draw_class_from_script(bpy.types.Operator):
                         current_x += spacing + item.get_input("Dim X")
         return {'FINISHED'}
 
+
+class cabinet_builder_OT_add_external_script_path(bpy.types.Operator):
+    bl_idname = "cabinet_builder.add_external_script_path"
+    bl_label = "Add External Script Path"
+    bl_description = "This will add an external script path"
+    bl_options = {'UNDO'}
+
+    path: bpy.props.StringProperty(name="Path",description="The path to the external folder",subtype='DIR_PATH') # type: ignore
+
+    def execute(self,context):
+        cb_wm = context.window_manager.cabinet_builder
+        add_on_prefs = cb_wm.get_user_preferences(context)
+        add_on_prefs.script_paths.add()
+        return {'FINISHED'}
+
+
+class cabinet_builder_OT_set_active_script_path(bpy.types.Operator):
+    bl_idname = "cabinet_builder.set_active_script_path"
+    bl_label = "Set Active Script Path"
+    bl_description = "This set the selected library as the active external script path"
+    bl_options = {'UNDO'}
+
+    name: bpy.props.StringProperty(name="Name",description="The name of the script library") # type: ignore
+
+    def execute(self,context):
+        cb_scene = context.scene.cabinet_builder
+        cb_scene.active_script_library_name = self.name
+        return {'FINISHED'}
+    
+
+class cabinet_builder_OT_delete_script_path(bpy.types.Operator):
+    bl_idname = "cabinet_builder.delete_script_path"
+    bl_label = "Delete Script Path"
+    bl_description = "This will delete the selected script path"
+    bl_options = {'UNDO'}
+
+    path: bpy.props.StringProperty(name="Path",description="The path to the external folder",subtype='DIR_PATH') # type: ignore
+
+    def execute(self,context):
+        cb_wm = context.window_manager.cabinet_builder
+        add_on_prefs = cb_wm.get_user_preferences(context)
+        for i, external_script in enumerate(add_on_prefs.script_paths):
+            if external_script.path == self.path:
+                add_on_prefs.script_paths.remove(i)
+                return {'FINISHED'}
+        return {'CANCELLED'}
+
+
 classes = (
     cabinet_builder_OT_update_child_data,
     cabinet_builder_OT_container_prompts,
@@ -1230,7 +1279,10 @@ classes = (
     cabinet_builder_OT_assign_material_to_all_geo_node_inputs,
     cabinet_builder_OT_assign_cabinet_materials,
     Module_Class,
-    cabinet_builder_OT_draw_class_from_script
+    cabinet_builder_OT_draw_class_from_script,
+    cabinet_builder_OT_add_external_script_path,
+    cabinet_builder_OT_set_active_script_path,
+    cabinet_builder_OT_delete_script_path,
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)    
