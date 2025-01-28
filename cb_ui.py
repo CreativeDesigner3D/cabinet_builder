@@ -186,9 +186,14 @@ class CABINET_BUILDER_PT_cabinet_scripts(bpy.types.Panel):
         add_on_prefs = cb_wm.get_user_preferences(context)
         layout = self.layout
 
+        if cb_scene.active_script_library_name == "":
+            name = "Select Library"
+        else:
+            name = cb_scene.active_script_library_name
+
         row = layout.row()
         row.scale_y = 1.3
-        row.menu('CABINET_BUILDER_MT_script_library_categories',text=cb_scene.active_script_library_name)
+        row.menu('CABINET_BUILDER_MT_script_library_categories',text=name)
         for script_library in cb_wm.script_libraries:
             if script_library.name == cb_scene.active_script_library_name:
                 if hasattr(context.scene,script_library.namespace):
